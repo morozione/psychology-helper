@@ -3,25 +3,39 @@
 ## Project Overview
 A Kotlin Multiplatform mobile app for Android and iOS that helps users identify, track, and solve psychological problems through AI-guided conversations.
 
-## Documentation-Driven Development
-This project follows a documentation-first approach:
+## OpenSpec - Spec-Driven Development
+This project uses **OpenSpec** for spec-driven development.
 
-1. **Read specs first**: Before implementing any feature, read the relevant doc in `docs/features/`
-2. **Update docs**: When requirements change, update the docs first
-3. **Track status**: Update feature status in docs as work progresses
+### Workflow
+```
+/opsx:propose "feature-name"  → Create proposal, design, tasks
+/opsx:apply                   → Implement the tasks
+/opsx:archive                 → Archive completed change
+```
 
-## Documentation Structure
+### Structure
 ```
-docs/
-├── SPEC.md                 # Project overview and architecture
-└── features/
-    ├── AUTH.md             # Authentication (Google Sign-In)
-    ├── PROFILE.md          # User profile
-    ├── DASHBOARD.md        # Main dashboard screen
-    ├── PROBLEM_INVESTIGATION.md  # AI chat for problem identification
-    ├── PROBLEM_TRACKING.md       # Problem list and daily hints
-    └── DAILY_CHECKIN.md          # Daily check-in questions
+openspec/
+├── changes/          # Active changes being worked on
+│   └── feature-name/
+│       ├── proposal.md   # What & why
+│       ├── design.md     # How (technical approach)
+│       └── tasks.md      # Implementation checklist
+└── specs/            # Baseline specifications
 ```
+
+### Before implementing:
+1. Run `/opsx:propose` to create change artifacts
+2. Review generated proposal, design, and tasks
+3. Run `/opsx:apply` to implement
+4. Run `/opsx:archive` when done
+
+## Baseline Specs
+Reference documentation in `docs/` contains initial feature specs:
+- `docs/SPEC.md` - Project overview and architecture
+- `docs/features/` - Feature-level specs (AUTH, DASHBOARD, etc.)
+
+These serve as baseline context for OpenSpec proposals.
 
 ## Tech Stack
 - **Language**: Kotlin
@@ -51,28 +65,19 @@ iosApp/                     # iOS app entry point
 - `GoogleService-Info.plist` - Firebase config (iOS)
 - `local.properties` - Contains `GEMINI_API_KEY`
 
-## Implementation Guidelines
-
-### When implementing a feature:
-1. Read the feature doc in `docs/features/`
-2. Check user stories and acceptance criteria
-3. Follow the data models defined in the doc
-4. Update status checkboxes as you complete items
-5. Mark feature status as `in-progress` or `done`
-
-### Code style:
+## Code Style
 - Use Kotlin coroutines for async operations
 - Follow repository pattern for data access
 - Use StateFlow for UI state management
 - Keep Compose components small and focused
 
-### Firebase conventions:
+## Firebase Conventions
 - Collection: `users/{uid}/...`
 - Use Firestore snapshots for real-time updates
 - Handle offline persistence
 
-### Gemini API conventions:
-- System prompts defined in feature docs
+## Gemini API Conventions
+- System prompts defined in specs
 - Parse structured responses (SUMMARY:, PROBLEMS:, etc.)
 - Handle rate limits gracefully
 
@@ -94,4 +99,8 @@ xcodebuild -workspace iosApp.xcworkspace -scheme iosApp
 
 # Run tests
 ./gradlew test
+
+# OpenSpec
+openspec status              # Check current change status
+openspec update              # Update OpenSpec commands
 ```
