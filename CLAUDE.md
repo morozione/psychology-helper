@@ -30,12 +30,17 @@ openspec/
 3. Run `/opsx:apply` to implement
 4. Run `/opsx:archive` when done
 
-## Baseline Specs
-Reference documentation in `docs/` contains initial feature specs:
-- `docs/SPEC.md` - Project overview and architecture
-- `docs/features/` - Feature-level specs (AUTH, DASHBOARD, etc.)
+## Project Specs
+- `openspec/specs/project.md` - Project overview and architecture
 
-These serve as baseline context for OpenSpec proposals.
+## Feature Changes
+Each feature has its own folder in `openspec/changes/`:
+- `auth-google-signin/` - Google Sign-In authentication
+- `dashboard/` - Main dashboard screen
+- `problem-investigation/` - AI chat for problem identification
+- `problem-tracking/` - Problem list with daily hints
+- `profile/` - User profile and stats
+- `daily-checkin/` - Daily check-in questions
 
 ## Tech Stack
 - **Language**: Kotlin

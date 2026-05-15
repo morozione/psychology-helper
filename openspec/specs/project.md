@@ -1,4 +1,4 @@
-# Psychology Helper - Specification
+# Psychology Helper - Project Specification
 
 ## Overview
 A mobile app that helps users identify, track, and solve their psychological problems through AI-guided conversations and daily check-ins.
@@ -27,20 +27,7 @@ A mobile app that helps users identify, track, and solve their psychological pro
 └──────────────────┴──────────────────────────┘
 ```
 
-## Features Overview
-| Feature | Doc | Status |
-|---------|-----|--------|
-| Authentication | [AUTH.md](features/AUTH.md) | planned |
-| Profile | [PROFILE.md](features/PROFILE.md) | planned |
-| Dashboard | [DASHBOARD.md](features/DASHBOARD.md) | planned |
-| Problem Investigation | [PROBLEM_INVESTIGATION.md](features/PROBLEM_INVESTIGATION.md) | planned |
-| Problem Tracking | [PROBLEM_TRACKING.md](features/PROBLEM_TRACKING.md) | planned |
-| Daily Check-in | [DAILY_CHECKIN.md](features/DAILY_CHECKIN.md) | planned |
-
-## Data Models
-See individual feature docs for detailed models.
-
-### Core Entities
+## Core Entities
 - **User** - Firebase Auth user with profile data
 - **Problem** - Identified issue with status and hints
 - **ChatSession** - Conversation history with AI
@@ -52,3 +39,11 @@ See individual feature docs for detailed models.
 | Firebase | `google-services.json` (Android) | Downloaded from Firebase Console |
 | Firebase | `GoogleService-Info.plist` (iOS) | Downloaded from Firebase Console |
 | Gemini | `local.properties` | `GEMINI_API_KEY=xxx` |
+
+## Feature Priority
+1. AUTH - Required first
+2. DASHBOARD - Main entry point
+3. PROBLEM_INVESTIGATION - Core feature
+4. PROBLEM_TRACKING - Track identified problems
+5. PROFILE - User settings
+6. DAILY_CHECKIN - Engagement feature

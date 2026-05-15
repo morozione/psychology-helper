@@ -1,40 +1,18 @@
-# Feature: Dashboard
+# Design: Dashboard
 
-## Status: planned
+## Technical Approach
+Compose Multiplatform screen with real-time Firestore data updates.
 
-## Description
-Main screen after login. Shows overview of user's problems and provides entry point to investigate new problems.
+## Architecture
 
-## User Stories
-- [ ] As a user, I can see my active problems list
-- [ ] As a user, I can start investigating a new problem
-- [ ] As a user, I can navigate to my profile
-- [ ] As a user, I can tap on a problem to see details
-
-## Screens
-
-### Screen: Dashboard
-- **Route**: `/dashboard`
-- **Components**:
-  - Header with greeting and profile avatar
-  - "Investigate Problem" primary button
-  - Active problems list (cards)
-  - Bottom navigation (Dashboard, Problems, Profile)
-- **Behavior**:
-  - Default screen after authentication
-  - "Investigate Problem" opens Problem Investigation chat
-  - Problem card tap opens Problem Detail
-
-## Data Model
-```kotlin
-data class DashboardState(
-    val user: UserProfile,
-    val activeProblems: List<Problem>,
-    val todayCheckInCompleted: Boolean
-)
+### Data Flow
+```
+Firestore → ProblemsRepository → DashboardViewModel → DashboardScreen
 ```
 
-## UI Layout
+### Components
+
+#### UI Layout
 ```
 ┌─────────────────────────────┐
 │ Hello, {name}!    [avatar]  │
@@ -58,7 +36,40 @@ data class DashboardState(
 └─────────────────────────────┘
 ```
 
-## Implementation Notes
-- Load problems from Firestore on screen entry
-- Real-time updates using Firestore listeners
-- Show empty state if no problems yet
+### Data Model
+```kotlin
+data class DashboardState(
+    val user: UserProfile,
+    val activeProblems: List<Problem>,
+    val todayCheckInCompleted: Boolean,
+    val isLoading: Boolean,
+    val error: String?
+)
+```
+
+### ViewModel
+```kotlin
+class DashboardViewModel(
+    private val getProblemsUseCase: GetActiveProblemsUseCase,
+    private val getUserUseCase: GetCurrentUserUseCase
+) : ViewModel() {
+    val state: StateFlow<DashboardState>
+}
+```
+
+## Screen: Dashboard
+- **Route**: `/dashboard`
+- **Components**:
+  - `DashboardHeader` - greeting + avatar
+  - `InvestigateButton` - primary CTA
+  - `ProblemsList` - LazyColumn of ProblemCard
+  - `BottomNavBar` - Dashboard, Problems, Profile
+- **Behavior**:
+  - Default screen after authentication
+  - Real-time updates via Firestore listeners
+  - Empty state when no problems
+
+## Navigation
+- Dashboard → Problem Investigation (button tap)
+- Dashboard → Problem Detail (card tap)
+- Dashboard → Profile (nav bar)
