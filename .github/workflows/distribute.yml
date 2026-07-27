@@ -15,14 +15,12 @@ on:
 #                              (Project Settings → Your apps → App ID)
 #                              Format: 1:123456789012:android:abc123def456
 #
-#   CREDENTIAL_FILE_CONTENT  - Firebase service account JSON (base64 encoded)
+#   CREDENTIAL_FILE_CONTENT  - Firebase service account JSON (paste raw JSON content)
 #                              Create via: Google Cloud Console → IAM → Service Accounts
-#                              Role: Firebase App Distribution Admin
-#                              Then: base64 -w 0 service-account.json
+#                              Role: Firebase App Distribution Admin → download JSON key
 #
-#   GOOGLE_SERVICES_JSON     - google-services.json content (base64 encoded)
+#   GOOGLE_SERVICES_JSON     - google-services.json content (paste raw JSON content)
 #                              Download from: Firebase console → Project Settings → Your apps
-#                              Then: base64 -w 0 google-services.json
 #
 # Optional:
 #   FIREBASE_TESTER_GROUPS   - Comma-separated tester group aliases (e.g. "qa-team,beta-testers")
@@ -46,10 +44,10 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Decode google-services.json
+      - name: Write google-services.json
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: echo "$GOOGLE_SERVICES_JSON" | base64 --decode > composeApp/google-services.json
+        run: echo "$GOOGLE_SERVICES_JSON" > composeApp/google-services.json
 
       - name: Build release APK
         run: ./gradlew :composeApp:assembleRelease --stacktrace
