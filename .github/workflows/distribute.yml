@@ -1,0 +1,62 @@
+name: Distribute to Firebase App Distribution
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: 'Release notes for testers'
+        required: false
+        default: 'New build from main branch'
+
+# Required repository secrets:
+#   FIREBASE_APP_ID          - Android App ID from Firebase console
+#                              (Project Settings → Your apps → App ID)
+#                              Format: 1:123456789012:android:abc123def456
+#
+#   CREDENTIAL_FILE_CONTENT  - Firebase service account JSON (paste raw JSON content)
+#                              Create via: Google Cloud Console → IAM → Service Accounts
+#                              Role: Firebase App Distribution Admin → download JSON key
+#
+#   GOOGLE_SERVICES_JSON     - google-services.json content (paste raw JSON content)
+#                              Download from: Firebase console → Project Settings → Your apps
+#
+# Optional:
+#   FIREBASE_TESTER_GROUPS   - Comma-separated tester group aliases (e.g. "qa-team,beta-testers")
+
+jobs:
+  distribute:
+    name: Build & Distribute
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Write google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: echo "$GOOGLE_SERVICES_JSON" > composeApp/google-services.json
+
+      - name: Build release APK
+        run: ./gradlew :composeApp:assembleRelease --stacktrace
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
+          groups: ${{ secrets.FIREBASE_TESTER_GROUPS }}
+          file: composeApp/build/outputs/apk/release/composeApp-release-unsigned.apk
+          releaseNotes: ${{ github.event.inputs.release_notes || format('Build from commit {0} — {1}', github.sha, github.event.head_commit.message) }}
