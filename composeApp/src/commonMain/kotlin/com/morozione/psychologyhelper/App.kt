@@ -1,48 +1,41 @@
 package com.morozione.psychologyhelper
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
-
-import psychologyhelper.composeapp.generated.resources.Res
-import psychologyhelper.composeapp.generated.resources.compose_multiplatform
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import cafe.adriel.voyager.navigator.Navigator
+import com.morozione.psychologyhelper.domain.entity.User
+import com.morozione.psychologyhelper.domain.repository.AuthRepository
+import com.morozione.psychologyhelper.feature.auth.LoginScreen
+import com.morozione.psychologyhelper.feature.home.HomeScreen
+import com.morozione.psychologyhelper.ui.theme.PsychologyTheme
+import org.koin.compose.koinInject
 
 @Composable
-@Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
+    PsychologyTheme {
+        val authRepository: AuthRepository = koinInject()
+
+        // null = determining, true = authenticated, false = unauthenticated
+        var authState by remember { mutableStateOf<Boolean?>(null) }
+
+        LaunchedEffect(Unit) {
+            authRepository.currentUser.collect { user: User? ->
+                authState = user != null
             }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
-                }
+        }
+
+        // Use key so the Navigator is fully recreated when auth state changes,
+        // giving a clean navigation stack for each auth context.
+        key(authState) {
+            when (authState) {
+                true -> Navigator(HomeScreen())
+                false -> Navigator(LoginScreen())
+                null -> Unit // Auth state is still loading; show nothing (splash could go here)
             }
         }
     }

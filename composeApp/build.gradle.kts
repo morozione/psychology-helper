@@ -1,4 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -6,6 +5,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.googleServices)
 }
 
 kotlin {
@@ -14,7 +14,7 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -24,11 +24,12 @@ kotlin {
             isStatic = true
         }
     }
-    
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.koin.android)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -37,8 +38,19 @@ kotlin {
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.voyager.navigator)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.kotlinx.coroutines.core)
+            // All modules — explicit deps needed so PsychologyApplication can access Koin modules
+            implementation(project(":shared:core:domain"))
+            implementation(project(":shared:core:data"))
+            implementation(project(":shared:core:ui"))
+            implementation(project(":shared:feature:auth"))
+            implementation(project(":shared:feature:home"))
+            implementation(project(":shared:feature:mood"))
+            implementation(project(":shared:feature:journal"))
+            implementation(project(":shared:feature:profile"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -76,4 +88,3 @@ android {
 dependencies {
     debugImplementation(libs.compose.uiTooling)
 }
-
