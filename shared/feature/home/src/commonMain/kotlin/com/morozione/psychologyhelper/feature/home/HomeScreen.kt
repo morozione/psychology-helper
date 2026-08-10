@@ -1,5 +1,6 @@
 package com.morozione.psychologyhelper.feature.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,13 +12,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,19 +27,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.morozione.psychologyhelper.domain.entity.MoodEntry
+import com.morozione.psychologyhelper.feature.chat.ChatScreenContent
 import com.morozione.psychologyhelper.feature.journal.JournalScreenContent
 import com.morozione.psychologyhelper.feature.mood.MoodScreenContent
 import com.morozione.psychologyhelper.feature.profile.ProfileScreenContent
 import com.morozione.psychologyhelper.ui.component.EmptyState
+import com.morozione.psychologyhelper.ui.component.LoadingContent
 import com.morozione.psychologyhelper.ui.component.PsychologyCard
 import com.morozione.psychologyhelper.ui.component.SectionTitle
+import com.morozione.psychologyhelper.ui.theme.Dimens
+import com.morozione.psychologyhelper.ui.theme.GradientEnd
+import com.morozione.psychologyhelper.ui.theme.GradientStart
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -47,6 +56,7 @@ enum class BottomTab(val label: String, val emoji: String) {
     HOME("Home", "🏠"),
     MOOD("Mood", "😊"),
     JOURNAL("Journal", "📔"),
+    CHAT("Chat", "🤖"),
     PROFILE("Profile", "👤")
 }
 
@@ -58,6 +68,14 @@ class HomeScreen : Screen {
         val screenModel = koinScreenModel<HomeScreenModel>()
         val state by screenModel.state.collectAsState()
         var selectedTab by remember { mutableStateOf(BottomTab.HOME) }
+
+        LaunchedEffect(Unit) {
+            screenModel.effects.collect { effect ->
+                when (effect) {
+                    is HomeEffect.ShowError -> { /* handled inline */ }
+                }
+            }
+        }
 
         Scaffold(
             bottomBar = {
@@ -79,12 +97,13 @@ class HomeScreen : Screen {
                     .fillMaxSize()
             ) {
                 when (selectedTab) {
-                    BottomTab.HOME -> HomeDashboardContent(state = state)
+                    BottomTab.HOME -> HomeDashboardContent(state = state, screenModel = screenModel)
                     BottomTab.MOOD -> MoodScreenContent(userId = state.user?.id ?: "")
                     BottomTab.JOURNAL -> JournalScreenContent(
                         userId = state.user?.id ?: "",
                         navigator = navigator
                     )
+                    BottomTab.CHAT -> ChatScreenContent()
                     BottomTab.PROFILE -> ProfileScreenContent(user = state.user)
                 }
             }
@@ -93,11 +112,9 @@ class HomeScreen : Screen {
 }
 
 @Composable
-private fun HomeDashboardContent(state: HomeUiState) {
+private fun HomeDashboardContent(state: HomeState, screenModel: HomeScreenModel) {
     if (state.isLoading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-        }
+        LoadingContent()
         return
     }
 
@@ -106,21 +123,33 @@ private fun HomeDashboardContent(state: HomeUiState) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = Dimens.spaceLg)
     ) {
         item {
-            Spacer(Modifier.height(24.dp))
-            Text(
-                text = greeting,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = "How are you feeling today?",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-            )
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(Dimens.spaceXxl))
+
+            // Gradient header card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(Dimens.radiusXl))
+                    .background(Brush.horizontalGradient(listOf(GradientStart, GradientEnd)))
+                    .padding(Dimens.spaceXxl)
+            ) {
+                Column {
+                    Text(
+                        text = greeting,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "How are you feeling?",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                }
+            }
+            Spacer(Modifier.height(Dimens.spaceXl))
         }
 
         item {
@@ -129,16 +158,16 @@ private fun HomeDashboardContent(state: HomeUiState) {
                 PsychologyCard(
                     modifier = Modifier
                         .weight(1f)
-                        .height(90.dp)
+                        .height(Dimens.space5xl + Dimens.spaceXxl)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(12.dp),
+                            .padding(Dimens.spaceMd),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text("😊", fontSize = 28.sp)
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(Dimens.spaceXs))
                         Text(
                             "Log Mood",
                             style = MaterialTheme.typography.bodySmall,
@@ -146,20 +175,20 @@ private fun HomeDashboardContent(state: HomeUiState) {
                         )
                     }
                 }
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(Dimens.spaceMd))
                 PsychologyCard(
                     modifier = Modifier
                         .weight(1f)
-                        .height(90.dp)
+                        .height(Dimens.space5xl + Dimens.spaceXxl)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(12.dp),
+                            .padding(Dimens.spaceMd),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text("📔", fontSize = 28.sp)
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(Dimens.spaceXs))
                         Text(
                             "Write Journal",
                             style = MaterialTheme.typography.bodySmall,
@@ -168,7 +197,7 @@ private fun HomeDashboardContent(state: HomeUiState) {
                     }
                 }
             }
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(Dimens.spaceXl))
         }
 
         item { SectionTitle("Recent Mood Entries") }
@@ -184,11 +213,11 @@ private fun HomeDashboardContent(state: HomeUiState) {
         } else {
             items(state.recentMoodEntries) { entry ->
                 MoodEntryItem(entry = entry)
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(Dimens.spaceSm))
             }
         }
 
-        item { Spacer(Modifier.height(16.dp)) }
+        item { Spacer(Modifier.height(Dimens.spaceLg)) }
     }
 }
 
@@ -196,11 +225,11 @@ private fun HomeDashboardContent(state: HomeUiState) {
 private fun MoodEntryItem(entry: MoodEntry) {
     PsychologyCard(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(Dimens.spaceLg),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = entry.mood.emoji, fontSize = 28.sp)
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(Dimens.spaceMd))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = entry.mood.label,
@@ -216,7 +245,7 @@ private fun MoodEntryItem(entry: MoodEntry) {
                     )
                 }
             }
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(Dimens.spaceSm))
             Text(
                 text = formatTimestamp(entry.timestamp),
                 style = MaterialTheme.typography.bodySmall,

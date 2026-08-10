@@ -24,13 +24,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.koin.koinScreenModel
 import com.morozione.psychologyhelper.domain.entity.User
 import com.morozione.psychologyhelper.ui.component.PsychologyButton
 import com.morozione.psychologyhelper.ui.component.PsychologyCard
 import com.morozione.psychologyhelper.ui.component.SectionTitle
+import com.morozione.psychologyhelper.ui.theme.Dimens
 
 @Composable
 fun ProfileScreenContent(user: User?) {
@@ -38,7 +38,7 @@ fun ProfileScreenContent(user: User?) {
     val state by screenModel.state.collectAsState()
 
     LaunchedEffect(user) {
-        screenModel.initialize(user)
+        screenModel.onIntent(ProfileIntent.Initialize(user))
     }
 
     // App.kt observes auth state changes and navigates to LoginScreen after logout automatically.
@@ -47,12 +47,12 @@ fun ProfileScreenContent(user: User?) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = Dimens.spaceLg),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(Dimens.space3xl))
 
-        // Avatar with initials
+        // Avatar with initials (photo upload is a future native feature)
         val initials = user?.displayName
             ?.split(" ")
             ?.take(2)
@@ -62,7 +62,7 @@ fun ProfileScreenContent(user: User?) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(90.dp)
+                .size(Dimens.avatarLg)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
         ) {
@@ -72,7 +72,7 @@ fun ProfileScreenContent(user: User?) {
                 color = MaterialTheme.colorScheme.primary
             )
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(Dimens.spaceLg))
 
         Text(
             text = user?.displayName ?: "User",
@@ -84,17 +84,17 @@ fun ProfileScreenContent(user: User?) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
         )
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(Dimens.space3xl))
 
         SectionTitle(
             text = "My Stats",
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(Dimens.spaceSm))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(Dimens.spaceMd)
         ) {
             StatCard(
                 label = "Mood Entries",
@@ -110,15 +110,15 @@ fun ProfileScreenContent(user: User?) {
             )
         }
 
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(Dimens.space4xl))
 
         PsychologyButton(
             text = "Sign Out",
-            onClick = screenModel::logout,
+            onClick = { screenModel.onIntent(ProfileIntent.Logout) },
             isLoading = state.isLoggingOut
         )
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(Dimens.space3xl))
     }
 }
 
@@ -133,11 +133,11 @@ private fun StatCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(Dimens.spaceLg),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = emoji, fontSize = 28.sp)
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Dimens.spaceSm))
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineMedium,

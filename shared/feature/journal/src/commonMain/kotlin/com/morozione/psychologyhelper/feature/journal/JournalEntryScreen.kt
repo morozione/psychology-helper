@@ -23,7 +23,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -31,6 +30,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.morozione.psychologyhelper.domain.entity.JournalEntry
 import com.morozione.psychologyhelper.ui.component.PsychologyButton
 import com.morozione.psychologyhelper.ui.component.PsychologyTextField
+import com.morozione.psychologyhelper.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 class JournalEntryScreen(
@@ -45,12 +45,12 @@ class JournalEntryScreen(
         val state by screenModel.state.collectAsState()
 
         LaunchedEffect(Unit) {
-            screenModel.initialize(userId, existingEntry)
-        }
-
-        LaunchedEffect(state.saveSuccess) {
-            if (state.saveSuccess) {
-                navigator.pop()
+            screenModel.onIntent(JournalEntryIntent.Initialize(userId, existingEntry))
+            screenModel.effects.collect { effect ->
+                when (effect) {
+                    is JournalEntryEffect.SavedSuccessfully -> navigator.pop()
+                    is JournalEntryEffect.ShowError -> { /* error shown inline */ }
+                }
             }
         }
 
@@ -74,18 +74,18 @@ class JournalEntryScreen(
                     .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
                     .imePadding()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = Dimens.spaceLg, vertical = Dimens.spaceSm)
             ) {
                 PsychologyTextField(
                     value = state.title,
-                    onValueChange = screenModel::onTitleChanged,
+                    onValueChange = { screenModel.onIntent(JournalEntryIntent.UpdateTitle(it)) },
                     label = "Title",
                     placeholder = "Entry title..."
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(Dimens.spaceLg))
                 PsychologyTextField(
                     value = state.content,
-                    onValueChange = screenModel::onContentChanged,
+                    onValueChange = { screenModel.onIntent(JournalEntryIntent.UpdateContent(it)) },
                     label = "Content",
                     placeholder = "Write your thoughts here...",
                     singleLine = false,
@@ -94,20 +94,20 @@ class JournalEntryScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (state.error != null) {
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(Dimens.spaceXs))
                     Text(
                         text = state.error!!,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(Dimens.spaceLg))
                 PsychologyButton(
                     text = if (existingEntry != null) "Update Entry" else "Save Entry",
-                    onClick = screenModel::save,
+                    onClick = { screenModel.onIntent(JournalEntryIntent.Save) },
                     isLoading = state.isSaving
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(Dimens.spaceLg))
             }
         }
     }

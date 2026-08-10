@@ -51,6 +51,7 @@ kotlin {
             implementation(project(":shared:feature:mood"))
             implementation(project(":shared:feature:journal"))
             implementation(project(":shared:feature:profile"))
+            implementation(project(":shared:feature:chat"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -68,6 +69,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "GEMINI_API_KEY", "\"${project.findProperty("GEMINI_API_KEY") ?: ""}\"")
     }
     packaging {
         resources {
@@ -78,6 +80,9 @@ android {
         getByName("release") {
             isMinifyEnabled = false
         }
+    }
+    buildFeatures {
+        buildConfig = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

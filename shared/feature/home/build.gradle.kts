@@ -23,6 +23,7 @@ kotlin {
             implementation(project(":shared:feature:mood"))
             implementation(project(":shared:feature:journal"))
             implementation(project(":shared:feature:profile"))
+            implementation(project(":shared:feature:chat"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)

@@ -4,6 +4,7 @@ import android.app.Application
 import com.morozione.psychologyhelper.data.di.dataModule
 import com.morozione.psychologyhelper.data.di.domainModule
 import com.morozione.psychologyhelper.feature.auth.authModule
+import com.morozione.psychologyhelper.feature.chat.chatModule
 import com.morozione.psychologyhelper.feature.home.homeModule
 import com.morozione.psychologyhelper.feature.journal.journalModule
 import com.morozione.psychologyhelper.feature.mood.moodModule
@@ -23,7 +24,8 @@ class PsychologyApplication : Application() {
                 homeModule,
                 moodModule,
                 journalModule,
-                profileModule
+                profileModule,
+                chatModule
             )
         }
     }

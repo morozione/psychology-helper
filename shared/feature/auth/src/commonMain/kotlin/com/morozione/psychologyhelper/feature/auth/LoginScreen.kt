@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -35,7 +36,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
@@ -43,6 +43,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.morozione.psychologyhelper.ui.component.PsychologyButton
 import com.morozione.psychologyhelper.ui.component.PsychologyTextField
+import com.morozione.psychologyhelper.ui.theme.Dimens
 
 class LoginScreen : Screen {
 
@@ -51,18 +52,14 @@ class LoginScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val screenModel = koinScreenModel<LoginScreenModel>()
         val state by screenModel.state.collectAsState()
-        val email by screenModel.email.collectAsState()
-        val password by screenModel.password.collectAsState()
-
         var passwordVisible by remember { mutableStateOf(false) }
         val snackbarHostState = remember { SnackbarHostState() }
 
-        // App.kt observes auth state and switches to HomeScreen automatically on login success.
-        // We only need to handle the Error state here.
-        LaunchedEffect(state) {
-            if (state is LoginState.Error) {
-                snackbarHostState.showSnackbar((state as LoginState.Error).message)
-                screenModel.clearError()
+        LaunchedEffect(Unit) {
+            screenModel.effects.collect { effect ->
+                when (effect) {
+                    is LoginEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+                }
             }
         }
 
@@ -80,12 +77,13 @@ class LoginScreen : Screen {
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp, vertical = 32.dp)
+                        .imePadding()
+                        .padding(horizontal = Dimens.spaceXxl, vertical = Dimens.space3xl)
                 ) {
-                    Text(text = "🌿", fontSize = 64.sp)
-                    Spacer(Modifier.height(8.dp))
+                    Text(text = "🧠", fontSize = 64.sp)
+                    Spacer(Modifier.height(Dimens.spaceSm))
                     Text(
-                        text = "Psychology Helper",
+                        text = "MindHelper",
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -95,20 +93,20 @@ class LoginScreen : Screen {
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                         textAlign = TextAlign.Center
                     )
-                    Spacer(Modifier.height(40.dp))
+                    Spacer(Modifier.height(Dimens.space4xl))
 
                     PsychologyTextField(
-                        value = email,
-                        onValueChange = screenModel::onEmailChanged,
+                        value = state.email,
+                        onValueChange = { screenModel.onIntent(LoginIntent.UpdateEmail(it)) },
                         label = "Email",
                         placeholder = "your@email.com",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(Dimens.spaceLg))
 
                     PsychologyTextField(
-                        value = password,
-                        onValueChange = screenModel::onPasswordChanged,
+                        value = state.password,
+                        onValueChange = { screenModel.onIntent(LoginIntent.UpdatePassword(it)) },
                         label = "Password",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         visualTransformation = if (passwordVisible) VisualTransformation.None
@@ -123,14 +121,14 @@ class LoginScreen : Screen {
                             }
                         }
                     )
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(Dimens.spaceXxl))
 
                     PsychologyButton(
                         text = "Sign In",
-                        onClick = screenModel::login,
-                        isLoading = state is LoginState.Loading
+                        onClick = { screenModel.onIntent(LoginIntent.Submit) },
+                        isLoading = state.isLoading
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(Dimens.spaceMd))
 
                     TextButton(
                         onClick = { navigator.push(RegisterScreen()) },

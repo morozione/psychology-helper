@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -37,13 +38,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.morozione.psychologyhelper.ui.component.PsychologyButton
 import com.morozione.psychologyhelper.ui.component.PsychologyTextField
+import com.morozione.psychologyhelper.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 class RegisterScreen : Screen {
@@ -53,18 +54,14 @@ class RegisterScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val screenModel = koinScreenModel<RegisterScreenModel>()
         val state by screenModel.state.collectAsState()
-        val displayName by screenModel.displayName.collectAsState()
-        val email by screenModel.email.collectAsState()
-        val password by screenModel.password.collectAsState()
-
         var passwordVisible by remember { mutableStateOf(false) }
         val snackbarHostState = remember { SnackbarHostState() }
 
-        // App.kt observes auth state and switches to HomeScreen automatically on register success.
-        LaunchedEffect(state) {
-            if (state is RegisterState.Error) {
-                snackbarHostState.showSnackbar((state as RegisterState.Error).message)
-                screenModel.clearError()
+        LaunchedEffect(Unit) {
+            screenModel.effects.collect { effect ->
+                when (effect) {
+                    is RegisterEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+                }
             }
         }
 
@@ -92,10 +89,11 @@ class RegisterScreen : Screen {
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                        .imePadding()
+                        .padding(horizontal = Dimens.spaceXxl, vertical = Dimens.spaceLg)
                 ) {
                     Text(
-                        text = "Join Psychology Helper",
+                        text = "Join MindHelper",
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -104,28 +102,28 @@ class RegisterScreen : Screen {
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                     )
-                    Spacer(Modifier.height(32.dp))
+                    Spacer(Modifier.height(Dimens.space3xl))
 
                     PsychologyTextField(
-                        value = displayName,
-                        onValueChange = screenModel::onDisplayNameChanged,
+                        value = state.displayName,
+                        onValueChange = { screenModel.onIntent(RegisterIntent.UpdateDisplayName(it)) },
                         label = "Display Name",
                         placeholder = "Your name"
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(Dimens.spaceLg))
 
                     PsychologyTextField(
-                        value = email,
-                        onValueChange = screenModel::onEmailChanged,
+                        value = state.email,
+                        onValueChange = { screenModel.onIntent(RegisterIntent.UpdateEmail(it)) },
                         label = "Email",
                         placeholder = "your@email.com",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(Dimens.spaceLg))
 
                     PsychologyTextField(
-                        value = password,
-                        onValueChange = screenModel::onPasswordChanged,
+                        value = state.password,
+                        onValueChange = { screenModel.onIntent(RegisterIntent.UpdatePassword(it)) },
                         label = "Password",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         visualTransformation = if (passwordVisible) VisualTransformation.None
@@ -140,14 +138,14 @@ class RegisterScreen : Screen {
                             }
                         }
                     )
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(Dimens.spaceXxl))
 
                     PsychologyButton(
                         text = "Create Account",
-                        onClick = screenModel::register,
-                        isLoading = state is RegisterState.Loading
+                        onClick = { screenModel.onIntent(RegisterIntent.Submit) },
+                        isLoading = state.isLoading
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(Dimens.spaceMd))
 
                     TextButton(
                         onClick = { navigator.pop() },

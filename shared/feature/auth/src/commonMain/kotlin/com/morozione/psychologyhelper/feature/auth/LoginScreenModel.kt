@@ -3,55 +3,76 @@ package com.morozione.psychologyhelper.feature.auth
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.morozione.psychologyhelper.domain.usecase.auth.LoginUseCase
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-sealed class LoginState {
-    data object Idle : LoginState()
-    data object Loading : LoginState()
-    data class Error(val message: String) : LoginState()
+data class LoginState(
+    val email: String = "",
+    val password: String = "",
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
+
+sealed class LoginIntent {
+    data class UpdateEmail(val value: String) : LoginIntent()
+    data class UpdatePassword(val value: String) : LoginIntent()
+    object Submit : LoginIntent()
+    object Retry : LoginIntent()
+}
+
+sealed class LoginEffect {
+    data class ShowError(val message: String) : LoginEffect()
 }
 
 class LoginScreenModel(
     private val loginUseCase: LoginUseCase
 ) : ScreenModel {
 
-    private val _state = MutableStateFlow<LoginState>(LoginState.Idle)
+    private val _state = MutableStateFlow(LoginState())
     val state: StateFlow<LoginState> = _state.asStateFlow()
 
-    private val _email = MutableStateFlow("")
-    val email: StateFlow<String> = _email.asStateFlow()
+    private val _effects = MutableSharedFlow<LoginEffect>(extraBufferCapacity = 1)
+    val effects: SharedFlow<LoginEffect> = _effects.asSharedFlow()
 
-    private val _password = MutableStateFlow("")
-    val password: StateFlow<String> = _password.asStateFlow()
+    fun onIntent(intent: LoginIntent) {
+        when (intent) {
+            is LoginIntent.UpdateEmail -> reduce { copy(email = intent.value) }
+            is LoginIntent.UpdatePassword -> reduce { copy(password = intent.value) }
+            is LoginIntent.Submit -> login()
+            is LoginIntent.Retry -> reduce { copy(error = null) }
+        }
+    }
 
-    fun onEmailChanged(value: String) { _email.value = value }
-    fun onPasswordChanged(value: String) { _password.value = value }
-
-    fun login() {
-        val email = _email.value.trim()
-        val password = _password.value
+    private fun login() {
+        val email = _state.value.email.trim()
+        val password = _state.value.password
         if (email.isBlank() || password.isBlank()) {
-            _state.value = LoginState.Error("Email and password cannot be empty")
+            val msg = "Email and password cannot be empty"
+            reduce { copy(error = msg) }
+            screenModelScope.launch { _effects.emit(LoginEffect.ShowError(msg)) }
             return
         }
         screenModelScope.launch {
-            _state.value = LoginState.Loading
+            reduce { copy(isLoading = true, error = null) }
             val result = loginUseCase(email, password)
-            _state.value = if (result.isSuccess) {
+            if (result.isSuccess) {
                 // App.kt observes auth state changes and navigates to HomeScreen automatically.
-                LoginState.Idle
+                reduce { copy(isLoading = false) }
             } else {
-                LoginState.Error(result.exceptionOrNull()?.message ?: "Login failed")
+                val msg = result.exceptionOrNull()?.message ?: "Login failed"
+                reduce { copy(isLoading = false, error = msg) }
+                _effects.emit(LoginEffect.ShowError(msg))
             }
         }
     }
 
-    fun clearError() {
-        if (_state.value is LoginState.Error) {
-            _state.value = LoginState.Idle
-        }
+    private fun reduce(reducer: LoginState.() -> LoginState) {
+        _state.update { it.reducer() }
     }
 }

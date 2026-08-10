@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -29,12 +28,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.Navigator
 import com.morozione.psychologyhelper.domain.entity.JournalEntry
 import com.morozione.psychologyhelper.ui.component.EmptyState
+import com.morozione.psychologyhelper.ui.component.ErrorContent
+import com.morozione.psychologyhelper.ui.component.LoadingContent
 import com.morozione.psychologyhelper.ui.component.PsychologyCard
+import com.morozione.psychologyhelper.ui.theme.Dimens
+import com.morozione.psychologyhelper.ui.theme.PrimaryGreen
+import com.morozione.psychologyhelper.ui.theme.SecondaryTeal
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -47,7 +50,7 @@ fun JournalScreenContent(userId: String, navigator: Navigator) {
 
     LaunchedEffect(userId) {
         if (userId.isNotBlank()) {
-            screenModel.initialize(userId)
+            screenModel.onIntent(JournalIntent.Initialize(userId))
         }
     }
 
@@ -72,9 +75,11 @@ fun JournalScreenContent(userId: String, navigator: Navigator) {
             contentAlignment = Alignment.Center
         ) {
             when {
-                state.isLoading -> {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
+                state.isLoading -> LoadingContent()
+                state.error != null -> ErrorContent(
+                    message = state.error!!,
+                    onRetry = { screenModel.onIntent(JournalIntent.Retry) }
+                )
                 state.entries.isEmpty() -> {
                     EmptyState(
                         icon = "📔",
@@ -84,34 +89,32 @@ fun JournalScreenContent(userId: String, navigator: Navigator) {
                 }
                 else -> {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize()
-                            .padding(horizontal = 16.dp)
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = Dimens.spaceLg)
                     ) {
                         item {
-                            Spacer(Modifier.height(16.dp))
+                            Spacer(Modifier.height(Dimens.spaceLg))
                             Text(
                                 text = "My Journal",
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
-                            Spacer(Modifier.height(16.dp))
+                            Spacer(Modifier.height(Dimens.spaceLg))
                         }
                         items(state.entries) { entry ->
                             JournalEntryItem(
                                 entry = entry,
                                 onTap = {
                                     navigator.push(
-                                        JournalEntryScreen(
-                                            userId = userId,
-                                            existingEntry = entry
-                                        )
+                                        JournalEntryScreen(userId = userId, existingEntry = entry)
                                     )
                                 },
-                                onDelete = { screenModel.deleteEntry(entry.id) }
+                                onDelete = { screenModel.onIntent(JournalIntent.DeleteEntry(entry.id)) }
                             )
-                            Spacer(Modifier.height(12.dp))
+                            Spacer(Modifier.height(Dimens.spaceMd))
                         }
-                        item { Spacer(Modifier.height(80.dp)) }
+                        item { Spacer(Modifier.height(Dimens.space5xl)) }
                     }
                 }
             }
@@ -125,14 +128,30 @@ private fun JournalEntryItem(
     onTap: () -> Unit,
     onDelete: () -> Unit
 ) {
+    // Colored left border based on content length
+    val borderColor = when {
+        entry.content.length < 100 -> SecondaryTeal
+        entry.content.length < 300 -> PrimaryGreen
+        else -> MaterialTheme.colorScheme.primary
+    }
+
     PsychologyCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = onTap
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(Dimens.spaceLg),
             verticalAlignment = Alignment.Top
         ) {
+            // Left color indicator
+            Box(
+                modifier = Modifier
+                    .width(Dimens.spaceXxs)
+                    .height(Dimens.space4xl)
+                    .then(
+                        Modifier.padding(end = Dimens.spaceXxs)
+                    )
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = entry.title,
@@ -141,7 +160,7 @@ private fun JournalEntryItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(Dimens.spaceXs))
                 Text(
                     text = entry.content,
                     style = MaterialTheme.typography.bodySmall,
@@ -149,14 +168,14 @@ private fun JournalEntryItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(Dimens.spaceSm))
                 Text(
                     text = formatDate(entry.timestamp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                 )
             }
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(Dimens.spaceSm))
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Filled.Delete,

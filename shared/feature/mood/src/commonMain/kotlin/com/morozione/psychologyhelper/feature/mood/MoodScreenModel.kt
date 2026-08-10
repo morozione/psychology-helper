@@ -6,60 +6,84 @@ import com.morozione.psychologyhelper.domain.entity.Mood
 import com.morozione.psychologyhelper.domain.entity.MoodEntry
 import com.morozione.psychologyhelper.domain.usecase.mood.AddMoodEntryUseCase
 import com.morozione.psychologyhelper.domain.usecase.mood.GetMoodEntriesUseCase
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlin.random.Random
 
-data class MoodUiState(
+data class MoodState(
     val entries: List<MoodEntry> = emptyList(),
     val selectedMood: Mood? = null,
     val note: String = "",
+    val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false,
     val error: String? = null
 )
+
+sealed class MoodIntent {
+    data class Initialize(val userId: String) : MoodIntent()
+    data class SelectMood(val mood: Mood) : MoodIntent()
+    data class UpdateNote(val note: String) : MoodIntent()
+    object Save : MoodIntent()
+    object Retry : MoodIntent()
+}
+
+sealed class MoodEffect {
+    object SavedSuccessfully : MoodEffect()
+    data class ShowError(val message: String) : MoodEffect()
+}
 
 class MoodScreenModel(
     private val getMoodEntriesUseCase: GetMoodEntriesUseCase,
     private val addMoodEntryUseCase: AddMoodEntryUseCase
 ) : ScreenModel {
 
-    private val _state = MutableStateFlow(MoodUiState())
-    val state: StateFlow<MoodUiState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(MoodState())
+    val state: StateFlow<MoodState> = _state.asStateFlow()
+
+    private val _effects = MutableSharedFlow<MoodEffect>(extraBufferCapacity = 1)
+    val effects: SharedFlow<MoodEffect> = _effects.asSharedFlow()
 
     private var currentUserId: String = ""
 
-    fun initialize(userId: String) {
+    fun onIntent(intent: MoodIntent) {
+        when (intent) {
+            is MoodIntent.Initialize -> initialize(intent.userId)
+            is MoodIntent.SelectMood -> reduce { copy(selectedMood = intent.mood, error = null) }
+            is MoodIntent.UpdateNote -> reduce { copy(note = intent.note) }
+            is MoodIntent.Save -> saveMoodEntry()
+            is MoodIntent.Retry -> reduce { copy(error = null) }
+        }
+    }
+
+    private fun initialize(userId: String) {
         if (currentUserId == userId) return
         currentUserId = userId
         screenModelScope.launch {
             getMoodEntriesUseCase(userId).collectLatest { entries ->
-                _state.value = _state.value.copy(entries = entries)
+                reduce { copy(entries = entries) }
             }
         }
     }
 
-    fun selectMood(mood: Mood) {
-        _state.value = _state.value.copy(selectedMood = mood)
-    }
-
-    fun onNoteChanged(note: String) {
-        _state.value = _state.value.copy(note = note)
-    }
-
-    fun saveMoodEntry() {
+    private fun saveMoodEntry() {
         val mood = _state.value.selectedMood ?: run {
-            _state.value = _state.value.copy(error = "Please select a mood")
+            val msg = "Please select a mood"
+            reduce { copy(error = msg) }
             return
         }
         if (currentUserId.isBlank()) return
 
         screenModelScope.launch {
-            _state.value = _state.value.copy(isSaving = true, error = null)
+            reduce { copy(isSaving = true, error = null) }
             val entry = MoodEntry(
                 id = generateId(),
                 userId = currentUserId,
@@ -68,28 +92,19 @@ class MoodScreenModel(
                 timestamp = Clock.System.now().toEpochMilliseconds()
             )
             val result = addMoodEntryUseCase(entry)
-            _state.value = if (result.isSuccess) {
-                _state.value.copy(
-                    isSaving = false,
-                    saveSuccess = true,
-                    selectedMood = null,
-                    note = ""
-                )
+            if (result.isSuccess) {
+                reduce { copy(isSaving = false, saveSuccess = true, selectedMood = null, note = "") }
+                _effects.emit(MoodEffect.SavedSuccessfully)
             } else {
-                _state.value.copy(
-                    isSaving = false,
-                    error = result.exceptionOrNull()?.message ?: "Failed to save mood"
-                )
+                val msg = result.exceptionOrNull()?.message ?: "Failed to save mood"
+                reduce { copy(isSaving = false, error = msg) }
+                _effects.emit(MoodEffect.ShowError(msg))
             }
         }
     }
 
-    fun clearSaveSuccess() {
-        _state.value = _state.value.copy(saveSuccess = false)
-    }
-
-    fun clearError() {
-        _state.value = _state.value.copy(error = null)
+    private fun reduce(reducer: MoodState.() -> MoodState) {
+        _state.update { it.reducer() }
     }
 
     private fun generateId(): String = buildString {

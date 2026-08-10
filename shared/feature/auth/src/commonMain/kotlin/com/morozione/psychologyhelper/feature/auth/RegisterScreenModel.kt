@@ -3,64 +3,86 @@ package com.morozione.psychologyhelper.feature.auth
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.morozione.psychologyhelper.domain.usecase.auth.RegisterUseCase
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-sealed class RegisterState {
-    data object Idle : RegisterState()
-    data object Loading : RegisterState()
-    data object Success : RegisterState()
-    data class Error(val message: String) : RegisterState()
+data class RegisterState(
+    val displayName: String = "",
+    val email: String = "",
+    val password: String = "",
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
+
+sealed class RegisterIntent {
+    data class UpdateDisplayName(val value: String) : RegisterIntent()
+    data class UpdateEmail(val value: String) : RegisterIntent()
+    data class UpdatePassword(val value: String) : RegisterIntent()
+    object Submit : RegisterIntent()
+    object Retry : RegisterIntent()
+}
+
+sealed class RegisterEffect {
+    data class ShowError(val message: String) : RegisterEffect()
 }
 
 class RegisterScreenModel(
     private val registerUseCase: RegisterUseCase
 ) : ScreenModel {
 
-    private val _state = MutableStateFlow<RegisterState>(RegisterState.Idle)
+    private val _state = MutableStateFlow(RegisterState())
     val state: StateFlow<RegisterState> = _state.asStateFlow()
 
-    private val _displayName = MutableStateFlow("")
-    val displayName: StateFlow<String> = _displayName.asStateFlow()
+    private val _effects = MutableSharedFlow<RegisterEffect>(extraBufferCapacity = 1)
+    val effects: SharedFlow<RegisterEffect> = _effects.asSharedFlow()
 
-    private val _email = MutableStateFlow("")
-    val email: StateFlow<String> = _email.asStateFlow()
+    fun onIntent(intent: RegisterIntent) {
+        when (intent) {
+            is RegisterIntent.UpdateDisplayName -> reduce { copy(displayName = intent.value) }
+            is RegisterIntent.UpdateEmail -> reduce { copy(email = intent.value) }
+            is RegisterIntent.UpdatePassword -> reduce { copy(password = intent.value) }
+            is RegisterIntent.Submit -> register()
+            is RegisterIntent.Retry -> reduce { copy(error = null) }
+        }
+    }
 
-    private val _password = MutableStateFlow("")
-    val password: StateFlow<String> = _password.asStateFlow()
-
-    fun onDisplayNameChanged(value: String) { _displayName.value = value }
-    fun onEmailChanged(value: String) { _email.value = value }
-    fun onPasswordChanged(value: String) { _password.value = value }
-
-    fun register() {
-        val name = _displayName.value.trim()
-        val email = _email.value.trim()
-        val password = _password.value
+    private fun register() {
+        val name = _state.value.displayName.trim()
+        val email = _state.value.email.trim()
+        val password = _state.value.password
         if (name.isBlank() || email.isBlank() || password.isBlank()) {
-            _state.value = RegisterState.Error("All fields are required")
+            val msg = "All fields are required"
+            reduce { copy(error = msg) }
+            screenModelScope.launch { _effects.emit(RegisterEffect.ShowError(msg)) }
             return
         }
         if (password.length < 6) {
-            _state.value = RegisterState.Error("Password must be at least 6 characters")
+            val msg = "Password must be at least 6 characters"
+            reduce { copy(error = msg) }
+            screenModelScope.launch { _effects.emit(RegisterEffect.ShowError(msg)) }
             return
         }
         screenModelScope.launch {
-            _state.value = RegisterState.Loading
+            reduce { copy(isLoading = true, error = null) }
             val result = registerUseCase(email, password, name)
-            _state.value = if (result.isSuccess) {
-                RegisterState.Success
+            if (result.isSuccess) {
+                // App.kt observes auth state and switches to HomeScreen automatically on register success.
+                reduce { copy(isLoading = false) }
             } else {
-                RegisterState.Error(result.exceptionOrNull()?.message ?: "Registration failed")
+                val msg = result.exceptionOrNull()?.message ?: "Registration failed"
+                reduce { copy(isLoading = false, error = msg) }
+                _effects.emit(RegisterEffect.ShowError(msg))
             }
         }
     }
 
-    fun clearError() {
-        if (_state.value is RegisterState.Error) {
-            _state.value = RegisterState.Idle
-        }
+    private fun reduce(reducer: RegisterState.() -> RegisterState) {
+        _state.update { it.reducer() }
     }
 }

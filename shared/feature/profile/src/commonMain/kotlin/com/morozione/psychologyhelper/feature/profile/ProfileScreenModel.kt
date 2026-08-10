@@ -6,17 +6,33 @@ import com.morozione.psychologyhelper.domain.entity.User
 import com.morozione.psychologyhelper.domain.usecase.auth.LogoutUseCase
 import com.morozione.psychologyhelper.domain.usecase.journal.GetJournalEntriesUseCase
 import com.morozione.psychologyhelper.domain.usecase.mood.GetMoodEntriesUseCase
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class ProfileUiState(
+data class ProfileState(
     val moodEntryCount: Int = 0,
     val journalEntryCount: Int = 0,
-    val isLoggingOut: Boolean = false
+    val isLoggingOut: Boolean = false,
+    val isLoading: Boolean = false,
+    val error: String? = null
 )
+
+sealed class ProfileIntent {
+    data class Initialize(val user: User?) : ProfileIntent()
+    object Logout : ProfileIntent()
+    object Retry : ProfileIntent()
+}
+
+sealed class ProfileEffect {
+    data class ShowError(val message: String) : ProfileEffect()
+}
 
 class ProfileScreenModel(
     private val logoutUseCase: LogoutUseCase,
@@ -24,33 +40,48 @@ class ProfileScreenModel(
     private val getJournalEntriesUseCase: GetJournalEntriesUseCase
 ) : ScreenModel {
 
-    private val _state = MutableStateFlow(ProfileUiState())
-    val state: StateFlow<ProfileUiState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(ProfileState())
+    val state: StateFlow<ProfileState> = _state.asStateFlow()
+
+    private val _effects = MutableSharedFlow<ProfileEffect>(extraBufferCapacity = 1)
+    val effects: SharedFlow<ProfileEffect> = _effects.asSharedFlow()
 
     private var currentUserId: String = ""
 
-    fun initialize(user: User?) {
+    fun onIntent(intent: ProfileIntent) {
+        when (intent) {
+            is ProfileIntent.Initialize -> initialize(intent.user)
+            is ProfileIntent.Logout -> logout()
+            is ProfileIntent.Retry -> reduce { copy(error = null) }
+        }
+    }
+
+    private fun initialize(user: User?) {
         val userId = user?.id ?: return
         if (currentUserId == userId) return
         currentUserId = userId
         screenModelScope.launch {
             getMoodEntriesUseCase(userId).collectLatest { entries ->
-                _state.value = _state.value.copy(moodEntryCount = entries.size)
+                reduce { copy(moodEntryCount = entries.size) }
             }
         }
         screenModelScope.launch {
             getJournalEntriesUseCase(userId).collectLatest { entries ->
-                _state.value = _state.value.copy(journalEntryCount = entries.size)
+                reduce { copy(journalEntryCount = entries.size) }
             }
         }
     }
 
-    fun logout() {
+    private fun logout() {
         screenModelScope.launch {
-            _state.value = _state.value.copy(isLoggingOut = true)
+            reduce { copy(isLoggingOut = true) }
             logoutUseCase()
             // App.kt observes auth state change and handles navigation to LoginScreen
-            _state.value = _state.value.copy(isLoggingOut = false)
+            reduce { copy(isLoggingOut = false) }
         }
+    }
+
+    private fun reduce(reducer: ProfileState.() -> ProfileState) {
+        _state.update { it.reducer() }
     }
 }
