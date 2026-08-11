@@ -11,6 +11,7 @@ import com.morozione.psychologyhelper.feature.mood.moodModule
 import com.morozione.psychologyhelper.feature.profile.profileModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import org.koin.dsl.module
 
 class PsychologyApplication : Application() {
     override fun onCreate() {
@@ -25,7 +26,8 @@ class PsychologyApplication : Application() {
                 moodModule,
                 journalModule,
                 profileModule,
-                chatModule
+                chatModule,
+                module { single { AppPreferences(androidContext()) } }
             )
         }
     }

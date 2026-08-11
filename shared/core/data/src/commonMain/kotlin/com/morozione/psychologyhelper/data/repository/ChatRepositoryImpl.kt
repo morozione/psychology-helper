@@ -4,15 +4,21 @@ import com.morozione.psychologyhelper.data.dto.ChatMessageDto
 import com.morozione.psychologyhelper.data.remote.GeminiService
 import com.morozione.psychologyhelper.domain.entity.ChatMessage
 import com.morozione.psychologyhelper.domain.repository.ChatRepository
+import com.morozione.psychologyhelper.domain.repository.MoodRepository
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlin.random.Random
 
 class ChatRepositoryImpl(
     private val firestore: FirebaseFirestore,
-    private val geminiService: GeminiService
+    private val geminiService: GeminiService,
+    private val moodRepository: MoodRepository
 ) : ChatRepository {
 
     private fun chatCollection(userId: String) =
@@ -39,12 +45,18 @@ class ChatRepositoryImpl(
             timestamp = userTimestamp
         )
 
-        // Save user message to Firestore
         chatCollection(userId).document(userMsgId).set(ChatMessageDto.fromDomain(userChatMessage))
 
-        // Call Gemini with history + new user message
+        val moodSummary = getMoodContext(userId)
+        val systemPrompt = """
+            You are a compassionate psychological assistant.
+            Context about the user: $moodSummary
+            Be empathetic and reference their recent emotional state when relevant.
+            Always recommend professional help for serious concerns.
+        """.trimIndent()
+
         val fullHistory = history + userChatMessage
-        val aiText = geminiService.sendMessage(fullHistory).getOrThrow()
+        val aiText = geminiService.sendMessage(fullHistory, systemPrompt).getOrThrow()
 
         val aiTimestamp = Clock.System.now().toEpochMilliseconds()
         val aiMsgId = generateId()
@@ -55,7 +67,6 @@ class ChatRepositoryImpl(
             timestamp = aiTimestamp
         )
 
-        // Save AI response to Firestore
         chatCollection(userId).document(aiMsgId).set(ChatMessageDto.fromDomain(aiChatMessage))
 
         aiChatMessage
@@ -67,6 +78,25 @@ class ChatRepositoryImpl(
             chatCollection(userId).document(doc.id).delete()
         }
     }
+
+    override suspend fun getMoodContext(userId: String): String {
+        val recentEntries = runCatching {
+            moodRepository.getMoodEntries(userId).first().take(5)
+        }.getOrElse { emptyList() }
+
+        if (recentEntries.isEmpty()) return "No recent mood data available."
+
+        val tz = TimeZone.currentSystemDefault()
+        val formatted = recentEntries.joinToString(", ") { entry ->
+            val dt = Instant.fromEpochMilliseconds(entry.timestamp).toLocalDateTime(tz)
+            val month = dt.month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
+            "${entry.mood.label} on $month ${dt.dayOfMonth}"
+        }
+        return "Recent moods: [$formatted]"
+    }
+
+    override suspend fun generateInsight(prompt: String): Result<String> =
+        geminiService.generateInsight(prompt)
 
     private fun generateId(): String = buildString {
         repeat(20) { append(Random.nextInt(16).toString(16)) }

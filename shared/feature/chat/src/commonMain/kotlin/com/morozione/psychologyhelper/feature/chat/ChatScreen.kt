@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import com.morozione.psychologyhelper.domain.entity.ChatMessage
 import com.morozione.psychologyhelper.ui.component.ErrorContent
@@ -57,6 +58,13 @@ import com.morozione.psychologyhelper.ui.theme.Dimens
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+
+class ChatScreen : Screen {
+    @Composable
+    override fun Content() {
+        ChatScreenContent()
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,7 +89,6 @@ fun ChatScreenContent() {
         }
     }
 
-    // Auto-scroll when messages update
     LaunchedEffect(state.messages.size) {
         if (state.messages.isNotEmpty()) {
             listState.animateScrollToItem(state.messages.size - 1)
@@ -157,9 +164,7 @@ fun ChatScreenContent() {
                     }
 
                     if (state.isSending) {
-                        item {
-                            TypingIndicator()
-                        }
+                        item { TypingIndicator() }
                     }
 
                     item { Spacer(Modifier.height(Dimens.spaceSm)) }

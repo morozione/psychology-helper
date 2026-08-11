@@ -31,30 +31,41 @@ data class GeminiCandidate(val content: GeminiContent)
 @Serializable
 data class GeminiError(val message: String)
 
+private const val GEMINI_URL =
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+
 class GeminiService(private val httpClient: HttpClient, private val apiKey: String) {
 
-    suspend fun sendMessage(history: List<ChatMessage>): Result<String> = runCatching {
-        val systemHistory = buildList {
-            // Prepend system context
-            add(GeminiContent(role = "user", parts = listOf(GeminiPart("You are a compassionate psychological assistant. Provide supportive, empathetic responses. Always remind users to seek professional help for serious issues."))))
-            add(GeminiContent(role = "model", parts = listOf(GeminiPart("Understood. I'm here to listen and support you."))))
-            // Add actual history
-            addAll(history.map { msg ->
-                GeminiContent(
-                    role = if (msg.isFromUser) "user" else "model",
-                    parts = listOf(GeminiPart(msg.content))
-                )
-            })
+    suspend fun sendMessage(history: List<ChatMessage>, systemPrompt: String): Result<String> =
+        runCatching {
+            val contents = buildList {
+                add(GeminiContent(role = "user", parts = listOf(GeminiPart(systemPrompt))))
+                add(GeminiContent(role = "model", parts = listOf(GeminiPart("Understood. I'm here to listen and support you."))))
+                addAll(history.map { msg ->
+                    GeminiContent(
+                        role = if (msg.isFromUser) "user" else "model",
+                        parts = listOf(GeminiPart(msg.content))
+                    )
+                })
+            }
+            callGemini(contents)
         }
-        val response: GeminiResponse = httpClient.post(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-        ) {
+
+    suspend fun generateInsight(prompt: String): Result<String> = runCatching {
+        val contents = listOf(
+            GeminiContent(role = "user", parts = listOf(GeminiPart(prompt)))
+        )
+        callGemini(contents)
+    }
+
+    private suspend fun callGemini(contents: List<GeminiContent>): String {
+        val response: GeminiResponse = httpClient.post(GEMINI_URL) {
             parameter("key", apiKey)
             contentType(ContentType.Application.Json)
-            setBody(GeminiRequest(systemHistory))
+            setBody(GeminiRequest(contents))
         }.body()
         response.error?.let { error(it.message) }
-        response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+        return response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
             ?: error("Empty response from Gemini")
     }
 }

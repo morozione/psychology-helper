@@ -43,5 +43,5 @@ val dataModule = module {
         }
     }
     single { GeminiService(get(), apiKey = getGeminiApiKey()) }
-    single<ChatRepository> { ChatRepositoryImpl(get(), get()) }
+    single<ChatRepository> { ChatRepositoryImpl(get(), get(), get()) }
 }

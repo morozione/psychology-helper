@@ -11,4 +11,6 @@ interface ChatRepository {
         history: List<ChatMessage>
     ): Result<ChatMessage>
     suspend fun clearHistory(userId: String): Result<Unit>
+    suspend fun getMoodContext(userId: String): String
+    suspend fun generateInsight(prompt: String): Result<String>
 }

@@ -1,6 +1,7 @@
 package com.morozione.psychologyhelper.feature.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,14 +37,15 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.morozione.psychologyhelper.domain.entity.MoodEntry
-import com.morozione.psychologyhelper.feature.chat.ChatScreenContent
+import com.morozione.psychologyhelper.feature.chat.ChatScreen
 import com.morozione.psychologyhelper.feature.journal.JournalScreenContent
-import com.morozione.psychologyhelper.feature.mood.MoodScreenContent
 import com.morozione.psychologyhelper.feature.profile.ProfileScreenContent
+import com.morozione.psychologyhelper.ui.component.DailyCheckInCard
 import com.morozione.psychologyhelper.ui.component.EmptyState
 import com.morozione.psychologyhelper.ui.component.LoadingContent
 import com.morozione.psychologyhelper.ui.component.PsychologyCard
 import com.morozione.psychologyhelper.ui.component.SectionTitle
+import com.morozione.psychologyhelper.ui.component.StreakWidget
 import com.morozione.psychologyhelper.ui.theme.Dimens
 import com.morozione.psychologyhelper.ui.theme.GradientEnd
 import com.morozione.psychologyhelper.ui.theme.GradientStart
@@ -54,9 +56,9 @@ import kotlinx.datetime.toLocalDateTime
 
 enum class BottomTab(val label: String, val emoji: String) {
     HOME("Home", "🏠"),
-    MOOD("Mood", "😊"),
+    INSIGHTS("Insights", "📊"),
+    TOOLS("Tools", "🫁"),
     JOURNAL("Journal", "📔"),
-    CHAT("Chat", "🤖"),
     PROFILE("Profile", "👤")
 }
 
@@ -72,7 +74,7 @@ class HomeScreen : Screen {
         LaunchedEffect(Unit) {
             screenModel.effects.collect { effect ->
                 when (effect) {
-                    is HomeEffect.ShowError -> { /* handled inline */ }
+                    is HomeEffect.ShowError -> {}
                 }
             }
         }
@@ -97,13 +99,18 @@ class HomeScreen : Screen {
                     .fillMaxSize()
             ) {
                 when (selectedTab) {
-                    BottomTab.HOME -> HomeDashboardContent(state = state, screenModel = screenModel)
-                    BottomTab.MOOD -> MoodScreenContent(userId = state.user?.id ?: "")
+                    BottomTab.HOME -> HomeDashboardContent(
+                        state = state,
+                        screenModel = screenModel,
+                        navigator = navigator,
+                        onTabChange = { selectedTab = it }
+                    )
+                    BottomTab.INSIGHTS -> InsightsScreenContent(userId = state.user?.id ?: "")
+                    BottomTab.TOOLS -> ToolsScreenContent()
                     BottomTab.JOURNAL -> JournalScreenContent(
                         userId = state.user?.id ?: "",
                         navigator = navigator
                     )
-                    BottomTab.CHAT -> ChatScreenContent()
                     BottomTab.PROFILE -> ProfileScreenContent(user = state.user)
                 }
             }
@@ -112,7 +119,12 @@ class HomeScreen : Screen {
 }
 
 @Composable
-private fun HomeDashboardContent(state: HomeState, screenModel: HomeScreenModel) {
+private fun HomeDashboardContent(
+    state: HomeState,
+    screenModel: HomeScreenModel,
+    navigator: cafe.adriel.voyager.navigator.Navigator,
+    onTabChange: (BottomTab) -> Unit
+) {
     if (state.isLoading) {
         LoadingContent()
         return
@@ -128,7 +140,6 @@ private fun HomeDashboardContent(state: HomeState, screenModel: HomeScreenModel)
         item {
             Spacer(Modifier.height(Dimens.spaceXxl))
 
-            // Gradient header card
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -142,55 +153,97 @@ private fun HomeDashboardContent(state: HomeState, screenModel: HomeScreenModel)
                         style = MaterialTheme.typography.headlineSmall,
                         color = Color.White
                     )
-                    Text(
-                        text = "How are you feeling?",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
+                    if (state.streakDays > 0) {
+                        Spacer(Modifier.height(Dimens.spaceSm))
+                        StreakWidget(streakDays = state.streakDays)
+                    }
                 }
             }
             Spacer(Modifier.height(Dimens.spaceXl))
         }
 
+        if (!state.hasTodayEntry) {
+            item {
+                DailyCheckInCard(
+                    onMoodSelected = { mood ->
+                        screenModel.onIntent(HomeIntent.LogMood(mood))
+                    }
+                )
+                Spacer(Modifier.height(Dimens.spaceXl))
+            }
+        } else {
+            state.recentMoodEntries.firstOrNull()?.let { todayEntry ->
+                item {
+                    PsychologyCard(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.padding(Dimens.spaceLg),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = todayEntry.mood.emoji, fontSize = 32.sp)
+                            Spacer(Modifier.width(Dimens.spaceMd))
+                            Column {
+                                Text(
+                                    "Today's mood",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                                Text(
+                                    todayEntry.mood.label,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(Dimens.spaceXl))
+                }
+            }
+        }
+
         item {
             SectionTitle("Quick Actions")
-            Row(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceMd)
+            ) {
                 PsychologyCard(
                     modifier = Modifier
                         .weight(1f)
-                        .height(Dimens.space5xl + Dimens.spaceXxl)
+                        .height(Dimens.space5xl + Dimens.spaceXxl),
+                    onClick = { navigator.push(ChatScreen()) }
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(Dimens.spaceMd),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Text("😊", fontSize = 28.sp)
+                        Text("💬", fontSize = 28.sp)
                         Spacer(Modifier.height(Dimens.spaceXs))
                         Text(
-                            "Log Mood",
+                            "Chat",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
-                Spacer(Modifier.width(Dimens.spaceMd))
                 PsychologyCard(
                     modifier = Modifier
                         .weight(1f)
-                        .height(Dimens.space5xl + Dimens.spaceXxl)
+                        .height(Dimens.space5xl + Dimens.spaceXxl),
+                    onClick = { onTabChange(BottomTab.JOURNAL) }
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(Dimens.spaceMd),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
                         Text("📔", fontSize = 28.sp)
                         Spacer(Modifier.height(Dimens.spaceXs))
                         Text(
-                            "Write Journal",
+                            "Journal",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
