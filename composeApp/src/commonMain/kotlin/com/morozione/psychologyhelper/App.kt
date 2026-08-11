@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.navigator.Navigator
 import com.morozione.psychologyhelper.domain.entity.User
 import com.morozione.psychologyhelper.domain.repository.AuthRepository
+import com.morozione.psychologyhelper.domain.util.AppPreferences
 import com.morozione.psychologyhelper.feature.auth.LoginScreen
 import com.morozione.psychologyhelper.feature.auth.OnboardingScreen
 import com.morozione.psychologyhelper.feature.home.HomeScreen

@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.Navigator
 import com.morozione.psychologyhelper.domain.entity.JournalEntry
@@ -44,7 +45,7 @@ import kotlinx.datetime.toLocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun JournalScreenContent(userId: String, navigator: Navigator) {
+fun Screen.JournalScreenContent(userId: String, navigator: Navigator) {
     val screenModel = koinScreenModel<JournalScreenModel>()
     val state by screenModel.state.collectAsState()
 

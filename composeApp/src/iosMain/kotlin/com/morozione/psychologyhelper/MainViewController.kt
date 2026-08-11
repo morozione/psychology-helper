@@ -9,6 +9,7 @@ import com.morozione.psychologyhelper.feature.home.homeModule
 import com.morozione.psychologyhelper.feature.journal.journalModule
 import com.morozione.psychologyhelper.feature.mood.moodModule
 import com.morozione.psychologyhelper.feature.profile.profileModule
+import com.morozione.psychologyhelper.domain.util.AppPreferences
 import org.koin.compose.KoinApplication
 import org.koin.dsl.module
 

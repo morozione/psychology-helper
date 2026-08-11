@@ -13,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import com.morozione.psychologyhelper.ui.component.InsightCard
 import com.morozione.psychologyhelper.ui.component.SectionTitle
@@ -21,7 +22,7 @@ import com.morozione.psychologyhelper.ui.component.WeekMoodChart
 import com.morozione.psychologyhelper.ui.theme.Dimens
 
 @Composable
-fun InsightsScreenContent(userId: String) {
+fun Screen.InsightsScreenContent(userId: String) {
     val screenModel = koinScreenModel<InsightsScreenModel>()
     val state by screenModel.state.collectAsState()
 

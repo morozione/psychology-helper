@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.morozione.psychologyhelper.AppPreferences
+import com.morozione.psychologyhelper.domain.util.AppPreferences
 import com.morozione.psychologyhelper.ui.component.PsychologyButton
 import com.morozione.psychologyhelper.ui.theme.Dimens
 import kotlinx.coroutines.launch

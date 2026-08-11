@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import com.morozione.psychologyhelper.domain.entity.User
 import com.morozione.psychologyhelper.ui.component.PsychologyButton
@@ -33,7 +34,7 @@ import com.morozione.psychologyhelper.ui.component.SectionTitle
 import com.morozione.psychologyhelper.ui.theme.Dimens
 
 @Composable
-fun ProfileScreenContent(user: User?) {
+fun Screen.ProfileScreenContent(user: User?) {
     val screenModel = koinScreenModel<ProfileScreenModel>()
     val state by screenModel.state.collectAsState()
 

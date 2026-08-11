@@ -22,6 +22,9 @@ on:
 #   GOOGLE_SERVICES_JSON     - google-services.json content (paste raw JSON content)
 #                              Download from: Firebase console → Project Settings → Your apps
 #
+#   GEMINI_API_KEY           - Gemini API key used by the in-app chat assistant (Android only)
+#                              Create via: https://aistudio.google.com/apikey
+#
 # Optional:
 #   FIREBASE_TESTER_GROUPS   - Comma-separated tester group aliases (e.g. "qa-team,beta-testers")
 
@@ -50,7 +53,9 @@ jobs:
         run: echo "$GOOGLE_SERVICES_JSON" > composeApp/google-services.json
 
       - name: Build release APK
-        run: ./gradlew :composeApp:assembleRelease --stacktrace
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: ./gradlew :composeApp:assembleRelease --stacktrace -PGEMINI_API_KEY="$GEMINI_API_KEY"
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools

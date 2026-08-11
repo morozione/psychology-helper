@@ -68,7 +68,7 @@ class ChatScreen : Screen {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreenContent() {
+fun Screen.ChatScreenContent() {
     val screenModel = koinScreenModel<ChatScreenModel>()
     val state by screenModel.state.collectAsState()
     val listState = rememberLazyListState()

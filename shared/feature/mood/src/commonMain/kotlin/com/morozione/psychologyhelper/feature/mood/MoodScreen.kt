@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import com.morozione.psychologyhelper.domain.entity.Mood
 import com.morozione.psychologyhelper.domain.entity.MoodEntry
@@ -56,7 +57,7 @@ private fun moodColor(mood: Mood): Color = when (mood) {
 }
 
 @Composable
-fun MoodScreenContent(userId: String) {
+fun Screen.MoodScreenContent(userId: String) {
     val screenModel = koinScreenModel<MoodScreenModel>()
     val state by screenModel.state.collectAsState()
 

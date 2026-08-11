@@ -49,10 +49,10 @@ import com.morozione.psychologyhelper.ui.component.StreakWidget
 import com.morozione.psychologyhelper.ui.theme.Dimens
 import com.morozione.psychologyhelper.ui.theme.GradientEnd
 import com.morozione.psychologyhelper.ui.theme.GradientStart
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 enum class BottomTab(val label: String, val emoji: String) {
     HOME("Home", "🏠"),
