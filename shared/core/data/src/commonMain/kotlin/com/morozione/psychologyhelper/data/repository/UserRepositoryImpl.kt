@@ -3,7 +3,6 @@ package com.morozione.psychologyhelper.data.repository
 import com.morozione.psychologyhelper.domain.entity.User
 import com.morozione.psychologyhelper.domain.repository.UserRepository
 import dev.gitlive.firebase.firestore.FirebaseFirestore
-import dev.gitlive.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
@@ -16,18 +15,13 @@ private data class UserDto(
 )
 
 class UserRepositoryImpl(
-    private val firestore: FirebaseFirestore,
-    private val storage: FirebaseStorage
+    private val firestore: FirebaseFirestore
 ) : UserRepository {
 
     override suspend fun uploadProfilePhoto(
         userId: String,
         imageBytes: ByteArray
-    ): Result<String> = runCatching {
-        val ref = storage.reference.child("profile_photos/$userId.jpg")
-        ref.putData(imageBytes)
-        ref.getDownloadUrl()
-    }
+    ): Result<String> = Result.failure(UnsupportedOperationException("Photo upload not yet implemented"))
 
     override suspend fun updateProfilePhotoUrl(
         userId: String,
