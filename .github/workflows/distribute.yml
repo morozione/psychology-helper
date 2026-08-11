@@ -50,7 +50,16 @@ jobs:
       - name: Write google-services.json
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: echo "$GOOGLE_SERVICES_JSON" > composeApp/google-services.json
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::error::GOOGLE_SERVICES_JSON secret is empty. Add it in Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" > composeApp/google-services.json
+          if ! python3 -m json.tool composeApp/google-services.json > /dev/null 2>&1; then
+            echo "::error::GOOGLE_SERVICES_JSON secret is not valid JSON. Open the google-services.json file downloaded from Firebase Console (Project Settings -> Your apps), select all its text, and paste it as the secret value exactly -- no surrounding quotes, no extra escaping."
+            exit 1
+          fi
 
       - name: Build release APK
         env:
