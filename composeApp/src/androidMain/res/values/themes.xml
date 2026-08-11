@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.PsychologyHelper.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#6B8F71</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="windowSplashScreenAnimationDuration">500</item>
+        <item name="postSplashScreenTheme">@style/Theme.PsychologyHelper</item>
+    </style>
+    <style name="Theme.PsychologyHelper" parent="Theme.AppCompat.DayNight.NoActionBar" />
+</resources>
