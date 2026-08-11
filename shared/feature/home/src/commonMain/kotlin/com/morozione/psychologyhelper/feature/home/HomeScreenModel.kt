@@ -33,13 +33,15 @@ data class HomeState(
     val streakDays: Int = 0,
     val hasTodayEntry: Boolean = false,
     val isLoading: Boolean = true,
-    val error: String? = null
+    val error: String? = null,
+    val selectedTab: BottomTab = BottomTab.HOME
 )
 
 sealed class HomeIntent {
     object LoadData : HomeIntent()
     object Retry : HomeIntent()
     data class LogMood(val mood: Mood) : HomeIntent()
+    data class SelectTab(val tab: BottomTab) : HomeIntent()
 }
 
 sealed class HomeEffect {
@@ -70,6 +72,7 @@ class HomeScreenModel(
                 loadData()
             }
             is HomeIntent.LogMood -> logMood(intent.mood)
+            is HomeIntent.SelectTab -> reduce { copy(selectedTab = intent.tab) }
         }
     }
 

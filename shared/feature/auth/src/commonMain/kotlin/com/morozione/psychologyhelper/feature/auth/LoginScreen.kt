@@ -36,7 +36,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -80,7 +79,7 @@ class LoginScreen : Screen {
                         .imePadding()
                         .padding(horizontal = Dimens.spaceXxl, vertical = Dimens.space3xl)
                 ) {
-                    Text(text = "🧠", fontSize = 64.sp)
+                    Text(text = "🧠", style = MaterialTheme.typography.displayLarge)
                     Spacer(Modifier.height(Dimens.spaceSm))
                     Text(
                         text = "MindHelper",

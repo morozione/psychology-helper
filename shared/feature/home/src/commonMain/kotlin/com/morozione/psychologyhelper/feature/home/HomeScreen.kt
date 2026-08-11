@@ -23,15 +23,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -69,7 +65,7 @@ class HomeScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val screenModel = koinScreenModel<HomeScreenModel>()
         val state by screenModel.state.collectAsState()
-        var selectedTab by remember { mutableStateOf(BottomTab.HOME) }
+        val selectedTab = state.selectedTab
 
         LaunchedEffect(Unit) {
             screenModel.effects.collect { effect ->
@@ -85,8 +81,8 @@ class HomeScreen : Screen {
                     BottomTab.entries.forEach { tab ->
                         NavigationBarItem(
                             selected = selectedTab == tab,
-                            onClick = { selectedTab = tab },
-                            icon = { Text(text = tab.emoji, fontSize = 20.sp) },
+                            onClick = { screenModel.onIntent(HomeIntent.SelectTab(tab)) },
+                            icon = { Text(text = tab.emoji, style = MaterialTheme.typography.titleLarge) },
                             label = { Text(tab.label) }
                         )
                     }
@@ -103,7 +99,7 @@ class HomeScreen : Screen {
                         state = state,
                         screenModel = screenModel,
                         navigator = navigator,
-                        onTabChange = { selectedTab = it }
+                        onTabChange = { screenModel.onIntent(HomeIntent.SelectTab(it)) }
                     )
                     BottomTab.INSIGHTS -> InsightsScreenContent(userId = state.user?.id ?: "")
                     BottomTab.TOOLS -> ToolsScreenContent()
@@ -179,7 +175,7 @@ private fun HomeDashboardContent(
                             modifier = Modifier.padding(Dimens.spaceLg),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = todayEntry.mood.emoji, fontSize = 32.sp)
+                            Text(text = todayEntry.mood.emoji, style = MaterialTheme.typography.headlineLarge)
                             Spacer(Modifier.width(Dimens.spaceMd))
                             Column {
                                 Text(
@@ -218,7 +214,7 @@ private fun HomeDashboardContent(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text("💬", fontSize = 28.sp)
+                        Text("💬", style = MaterialTheme.typography.headlineMedium)
                         Spacer(Modifier.height(Dimens.spaceXs))
                         Text(
                             "Chat",
@@ -240,7 +236,7 @@ private fun HomeDashboardContent(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text("📔", fontSize = 28.sp)
+                        Text("📔", style = MaterialTheme.typography.headlineMedium)
                         Spacer(Modifier.height(Dimens.spaceXs))
                         Text(
                             "Journal",
@@ -281,7 +277,7 @@ private fun MoodEntryItem(entry: MoodEntry) {
             modifier = Modifier.padding(Dimens.spaceLg),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = entry.mood.emoji, fontSize = 28.sp)
+            Text(text = entry.mood.emoji, style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.width(Dimens.spaceMd))
             Column(modifier = Modifier.weight(1f)) {
                 Text(

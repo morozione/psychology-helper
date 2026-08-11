@@ -26,6 +26,9 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
         }
+        androidMain.dependencies {
+            implementation(libs.androidx.activity.compose)
+        }
     }
 }
 

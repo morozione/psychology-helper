@@ -10,11 +10,9 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.morozione.psychologyhelper.domain.entity.Mood
 import com.morozione.psychologyhelper.domain.entity.MoodEntry
 import com.morozione.psychologyhelper.ui.theme.MoodBad
@@ -50,6 +48,7 @@ fun WeekMoodChart(entries: List<MoodEntry>, modifier: Modifier = Modifier) {
     val textMeasurer = rememberTextMeasurer()
     val labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
     val emptyBarColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+    val labelTextStyle = MaterialTheme.typography.labelSmall.copy(color = labelColor)
 
     val tz = TimeZone.currentSystemDefault()
     val valuesByDay = Array(7) { mutableListOf<Float>() }
@@ -99,7 +98,7 @@ fun WeekMoodChart(entries: List<MoodEntry>, modifier: Modifier = Modifier) {
 
             val labelResult = textMeasurer.measure(
                 text = dayLabels[i],
-                style = TextStyle(fontSize = 11.sp, color = labelColor)
+                style = labelTextStyle
             )
             drawText(
                 textLayoutResult = labelResult,

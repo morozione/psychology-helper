@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
 import com.morozione.psychologyhelper.ui.theme.Dimens
 
 @Composable
@@ -20,7 +19,7 @@ fun StatCard(label: String, value: String, emoji: String, modifier: Modifier = M
             modifier = Modifier.padding(Dimens.spaceMd),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(emoji, fontSize = 20.sp)
+            Text(emoji, style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(Dimens.spaceXs))
             Text(
                 value,

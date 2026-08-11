@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun EmptyState(
@@ -31,7 +30,7 @@ fun EmptyState(
     ) {
         Text(
             text = icon,
-            fontSize = 56.sp
+            style = MaterialTheme.typography.displayLarge
         )
         Spacer(Modifier.height(16.dp))
         Text(

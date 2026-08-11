@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.sp
 import com.morozione.psychologyhelper.domain.entity.Mood
 import com.morozione.psychologyhelper.ui.theme.Dimens
 
@@ -37,7 +36,7 @@ fun DailyCheckInCard(onMoodSelected: (Mood) -> Unit, modifier: Modifier = Modifi
                             .clickable { onMoodSelected(mood) }
                             .padding(Dimens.spaceSm)
                     ) {
-                        Text(mood.emoji, fontSize = 28.sp)
+                        Text(mood.emoji, style = MaterialTheme.typography.headlineMedium)
                         Spacer(Modifier.height(Dimens.spaceXs))
                         Text(mood.label, style = MaterialTheme.typography.labelSmall)
                     }

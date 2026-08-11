@@ -1,8 +1,10 @@
 package com.morozione.psychologyhelper.data.repository
 
+import com.morozione.psychologyhelper.data.util.toFirebaseData
 import com.morozione.psychologyhelper.domain.entity.User
 import com.morozione.psychologyhelper.domain.repository.UserRepository
 import dev.gitlive.firebase.firestore.FirebaseFirestore
+import dev.gitlive.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
@@ -15,22 +17,29 @@ private data class UserDto(
 )
 
 class UserRepositoryImpl(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val storage: FirebaseStorage
 ) : UserRepository {
 
     override suspend fun uploadProfilePhoto(
         userId: String,
         imageBytes: ByteArray
-    ): Result<String> = Result.failure(UnsupportedOperationException("Photo upload not yet implemented"))
+    ): Result<String> = runCatching {
+        val ref = storage.reference.child("profile_photos/$userId.jpg")
+        ref.putData(imageBytes.toFirebaseData())
+        ref.getDownloadUrl()
+    }
 
     override suspend fun updateProfilePhotoUrl(
         userId: String,
         url: String
     ): Result<Unit> = runCatching {
+        // set(..., merge = true) instead of update() -- the users/{userId} document may not
+        // exist yet (it's only ever written here), and update() requires it to already exist.
         firestore
             .collection("users")
             .document(userId)
-            .update("photoUrl" to url)
+            .set(UserDto(photoUrl = url), encodeDefaults = false, merge = true)
     }
 
     override fun getUserProfile(userId: String): Flow<User> {

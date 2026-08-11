@@ -31,7 +31,7 @@ val dataModule = module {
     single<AuthRepository> { AuthRepositoryImpl(get()) }
     single<MoodRepository> { MoodRepositoryImpl(get()) }
     single<JournalRepository> { JournalRepositoryImpl(get()) }
-    single<UserRepository> { UserRepositoryImpl(get()) }
+    single<UserRepository> { UserRepositoryImpl(get(), get()) }
     single {
         HttpClient {
             install(ContentNegotiation) {

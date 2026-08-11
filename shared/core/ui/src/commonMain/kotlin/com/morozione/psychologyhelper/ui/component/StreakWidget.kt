@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.sp
 import com.morozione.psychologyhelper.ui.theme.Dimens
 
 @Composable
@@ -24,7 +23,7 @@ fun StreakWidget(streakDays: Int, modifier: Modifier = Modifier) {
             .padding(horizontal = Dimens.spaceLg, vertical = Dimens.spaceSm),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("🔥", fontSize = 18.sp)
+        Text("🔥", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.width(Dimens.spaceXs))
         Text(
             "$streakDays day streak",

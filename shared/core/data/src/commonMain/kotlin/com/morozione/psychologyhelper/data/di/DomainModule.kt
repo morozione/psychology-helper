@@ -10,6 +10,9 @@ import com.morozione.psychologyhelper.domain.usecase.journal.GetJournalEntriesUs
 import com.morozione.psychologyhelper.domain.usecase.journal.UpdateJournalEntryUseCase
 import com.morozione.psychologyhelper.domain.usecase.mood.AddMoodEntryUseCase
 import com.morozione.psychologyhelper.domain.usecase.mood.GetMoodEntriesUseCase
+import com.morozione.psychologyhelper.domain.usecase.user.GetUserProfileUseCase
+import com.morozione.psychologyhelper.domain.usecase.user.UpdateProfilePhotoUrlUseCase
+import com.morozione.psychologyhelper.domain.usecase.user.UploadProfilePhotoUseCase
 import org.koin.dsl.module
 
 val domainModule = module {
@@ -23,4 +26,7 @@ val domainModule = module {
     factory { AddJournalEntryUseCase(get()) }
     factory { UpdateJournalEntryUseCase(get()) }
     factory { DeleteJournalEntryUseCase(get()) }
+    factory { UploadProfilePhotoUseCase(get()) }
+    factory { UpdateProfilePhotoUrlUseCase(get()) }
+    factory { GetUserProfileUseCase(get()) }
 }

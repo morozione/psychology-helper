@@ -48,7 +48,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import com.morozione.psychologyhelper.domain.entity.ChatMessage
@@ -100,7 +99,7 @@ fun Screen.ChatScreenContent() {
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🧠", fontSize = 20.sp)
+                        Text("🧠", style = MaterialTheme.typography.titleLarge)
                         Spacer(Modifier.width(Dimens.spaceSm))
                         Column {
                             Text(
@@ -293,7 +292,7 @@ private fun AiAvatar() {
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
     ) {
-        Text("🧠", fontSize = 16.sp)
+        Text("🧠", style = MaterialTheme.typography.titleMedium)
     }
 }
 
