@@ -17,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.sp
 import com.morozione.psychologyhelper.ui.theme.Dimens
 
 data class Exercise(
@@ -45,7 +44,7 @@ fun ExerciseCard(exercise: Exercise, onClick: () -> Unit, modifier: Modifier = M
                     .background(exercise.color.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(exercise.emoji, fontSize = 24.sp)
+                Text(exercise.emoji, style = MaterialTheme.typography.headlineSmall)
             }
             Spacer(Modifier.width(Dimens.spaceLg))
             Column(modifier = Modifier.weight(1f)) {

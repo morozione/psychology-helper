@@ -18,9 +18,6 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
         }
-        androidMain.dependencies {
-            implementation(libs.androidx.activity.compose)
-        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }

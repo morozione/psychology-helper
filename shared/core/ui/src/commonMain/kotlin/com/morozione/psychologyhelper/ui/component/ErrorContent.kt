@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
 import com.morozione.psychologyhelper.ui.theme.Dimens
 
 @Composable
@@ -28,7 +27,7 @@ fun ErrorContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("😕", fontSize = 48.sp)
+        Text("😕", style = MaterialTheme.typography.displayMedium)
         Spacer(Modifier.height(Dimens.spaceLg))
         Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
         Spacer(Modifier.height(Dimens.spaceLg))

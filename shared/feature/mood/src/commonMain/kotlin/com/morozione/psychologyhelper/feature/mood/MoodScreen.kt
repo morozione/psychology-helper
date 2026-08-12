@@ -29,7 +29,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import com.morozione.psychologyhelper.domain.entity.Mood
@@ -196,7 +195,7 @@ private fun MoodCard(
             .padding(vertical = Dimens.spaceSm, horizontal = Dimens.spaceXs),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = mood.emoji, fontSize = 24.sp)
+        Text(text = mood.emoji, style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(Dimens.spaceXxs))
         Text(
             text = mood.label,
@@ -215,7 +214,7 @@ private fun MoodHistoryItem(entry: MoodEntry) {
             .padding(vertical = Dimens.spaceSm),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = entry.mood.emoji, fontSize = 28.sp)
+        Text(text = entry.mood.emoji, style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.width(Dimens.spaceMd))
         Column(modifier = Modifier.weight(1f)) {
             Text(

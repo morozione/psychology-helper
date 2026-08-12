@@ -32,7 +32,7 @@ data class GeminiCandidate(val content: GeminiContent)
 data class GeminiError(val message: String)
 
 private const val GEMINI_URL =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
 
 class GeminiService(private val httpClient: HttpClient, private val apiKey: String) {
 

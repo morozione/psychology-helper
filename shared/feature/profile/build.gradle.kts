@@ -30,6 +30,8 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor)
         }
     }
 }
