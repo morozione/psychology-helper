@@ -123,3 +123,19 @@ migrated in this repo; currently a warning, not a build failure.
   console, not in code — a `RecaptchaAction(...) CONFIGURATION_NOT_FOUND` error on sign-in/sign-up means
   that protection needs enabling (and/or the signing certificate's SHA-1/SHA-256 fingerprints need to be
   registered) in the Firebase console for the app, not a code fix.
+
+## App versioning
+
+`VERSIONS.md` at the repo root is the single source of truth for the app's version — never hardcode
+`versionCode`/`versionName` in `composeApp/build.gradle.kts`. Its format is exactly two lines per
+entry (`<code> <title>` / `<description>`), newest entry at the top, one blank line between entries:
+
+- **`versionCode`** and **`versionName`** are both read at build time (locally and in CI, identically)
+  from the topmost entry — `<code>` (an integer that must equal the total number of entries in the
+  file) becomes `versionCode`, `<title>` becomes `versionName`. The Gradle build fails fast if `<code>`
+  doesn't match the entry count.
+- Add a new entry at the top before opening a PR that should ship a new build — see the
+  `release-version` skill. Bumping the version is a `VERSIONS.md` edit, never a Gradle or CI edit.
+- The newest entry's one-line `<description>` is used verbatim as the Firebase App Distribution release
+  notes in `distribute.yml` (overridable via the `release_notes` manual-dispatch input; `distribute.yml`
+  also re-validates `<code>` against the entry count before building, failing fast on a bad bump).
