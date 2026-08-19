@@ -27,6 +27,8 @@ on:
 #
 # Optional:
 #   FIREBASE_TESTER_GROUPS   - Comma-separated tester group aliases (e.g. "qa-team,beta-testers")
+#   FIREBASE_TESTER_EMAILS   - Comma-separated additional tester emails, appended to the always-included
+#                              morozione@gmail.com (e.g. "someone@example.com,other@example.com")
 
 jobs:
   distribute:
@@ -103,6 +105,7 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS_CONTENT: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
           FIREBASE_TESTER_GROUPS: ${{ secrets.FIREBASE_TESTER_GROUPS }}
+          FIREBASE_TESTER_EMAILS: ${{ secrets.FIREBASE_TESTER_EMAILS }}
           RELEASE_NOTES: ${{ github.event.inputs.release_notes || steps.version.outputs.notes }}
         run: |
           echo "$GOOGLE_APPLICATION_CREDENTIALS_CONTENT" > /tmp/credentials.json
@@ -111,8 +114,13 @@ jobs:
           if [ -n "$FIREBASE_TESTER_GROUPS" ]; then
             GROUPS_FLAG="--groups $FIREBASE_TESTER_GROUPS"
           fi
+          TESTERS="morozione@gmail.com"
+          if [ -n "$FIREBASE_TESTER_EMAILS" ]; then
+            TESTERS="$TESTERS,$FIREBASE_TESTER_EMAILS"
+          fi
           firebase appdistribution:distribute \
             composeApp/build/outputs/apk/release/composeApp-release-unsigned.apk \
             --app "$FIREBASE_APP_ID" \
             --release-notes "$RELEASE_NOTES" \
+            --testers "$TESTERS" \
             $GROUPS_FLAG
