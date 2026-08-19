@@ -12,5 +12,8 @@ two lines:
 Add a new entry at the top before opening a PR that should ship a new build — see the `release-version`
 skill.
 
+2 0.2.0
+New app icon, fixed the glued-together app name, and CI now auto-adds a default Firebase App Distribution tester.
+
 1 0.1.0
 Initial tracked version baseline: email/password auth, daily mood tracking, journaling, an AI chat assistant, breathing exercises, and a profile/insights dashboard.
