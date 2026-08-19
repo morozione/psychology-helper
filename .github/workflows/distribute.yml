@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       release_notes:
-        description: 'Release notes for testers'
+        description: 'Release notes for testers (leave blank to use the latest VERSIONS.md entry)'
         required: false
-        default: 'New build from main branch'
+        default: ''
 
 # Required repository secrets:
 #   FIREBASE_APP_ID          - Android App ID from Firebase console
@@ -61,6 +61,35 @@ jobs:
             exit 1
           fi
 
+      - name: Read version info from VERSIONS.md
+        id: version
+        run: |
+          PARSED=$(awk -v RS='' -v FS='\n' '
+            $1 ~ /^[0-9]+[ \t]/ {
+              count++
+              if (!found) { found=1; header=$1; desc=$2 }
+            }
+            END { print header; print desc; print count+0 }
+          ' VERSIONS.md)
+          HEADER=$(echo "$PARSED" | sed -n '1p')
+          DESC=$(echo "$PARSED" | sed -n '2p')
+          TOTAL=$(echo "$PARSED" | sed -n '3p')
+          if [ -z "$HEADER" ]; then
+            echo "::error::Could not find a '<code> <title>' entry in VERSIONS.md."
+            exit 1
+          fi
+          CODE=$(echo "$HEADER" | awk '{print $1}')
+          NAME=$(echo "$HEADER" | cut -d' ' -f2-)
+          if [ "$CODE" != "$TOTAL" ]; then
+            echo "::error::VERSIONS.md top entry code ($CODE) does not match the total number of entries ($TOTAL) — bump it when adding a new version."
+            exit 1
+          fi
+          {
+            echo "notes<<VERSIONS_EOF"
+            echo "v$NAME: $DESC"
+            echo "VERSIONS_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build release APK
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -74,7 +103,7 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS_CONTENT: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
           FIREBASE_TESTER_GROUPS: ${{ secrets.FIREBASE_TESTER_GROUPS }}
-          RELEASE_NOTES: ${{ github.event.inputs.release_notes || format('Build from commit {0}', github.sha) }}
+          RELEASE_NOTES: ${{ github.event.inputs.release_notes || steps.version.outputs.notes }}
         run: |
           echo "$GOOGLE_APPLICATION_CREDENTIALS_CONTENT" > /tmp/credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json

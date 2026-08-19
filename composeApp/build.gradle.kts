@@ -1,5 +1,30 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+// Single source of truth for versionCode/versionName: the topmost "<code> <title>" / "<description>"
+// entry in VERSIONS.md (two lines, blank line between entries). Bump it there (see the
+// release-version skill), not here.
+data class AppVersion(val code: Int, val name: String)
+
+fun latestAppVersion(): AppVersion {
+    val headerRegex = Regex("^(\\d+)\\s+(\\S.*)$")
+    val entryHeaders = rootProject.file("VERSIONS.md").readText()
+        .split(Regex("\n\\s*\n"))
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .map { it.lineSequence().first() }
+        .filter { headerRegex.matches(it) }
+    val top = entryHeaders.firstOrNull()
+        ?: error("VERSIONS.md has no '<code> <title>' entry")
+    val match = headerRegex.find(top)!!
+    val code = match.groupValues[1].toInt()
+    val name = match.groupValues[2].trim()
+    check(code == entryHeaders.size) {
+        "VERSIONS.md: top entry's code ($code) must equal the number of entries in the file " +
+            "(${entryHeaders.size}) — bump it when adding a new version."
+    }
+    return AppVersion(code, name)
+}
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
@@ -68,8 +93,9 @@ android {
         applicationId = "com.morozione.psychologyhelper"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        val appVersion = latestAppVersion()
+        versionCode = appVersion.code
+        versionName = appVersion.name
         buildConfigField("String", "GEMINI_API_KEY", "\"${project.findProperty("GEMINI_API_KEY") ?: ""}\"")
     }
     packaging {
