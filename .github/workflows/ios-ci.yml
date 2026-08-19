@@ -1,0 +1,62 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# This workflow only verifies the iOS app BUILDS (compiles + links). It does not sign, run, or
+# distribute it -- that requires an Apple Developer Program membership ($99/year), which this
+# project does not have. Real-device distribution (TestFlight or Firebase App Distribution for
+# iOS) is not possible without one, regardless of CI setup -- that's an Apple platform rule.
+#
+# Required repository secret:
+#   GEMINI_API_KEY  - same key used for the Android build (Settings -> Secrets and variables -> Actions)
+#
+# GoogleService-Info.plist is intentionally NOT wired into this workflow: a build-only check
+# (xcodebuild build, no app launch) never reads it, so it isn't needed for CI to pass. It only
+# matters once the app actually runs with real Firebase connectivity.
+
+jobs:
+  build:
+    name: Build (Simulator, unsigned)
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Write GEMINI_API_KEY into Config.xcconfig
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          sed -i '' "s|^GEMINI_API_KEY=.*|GEMINI_API_KEY=${GEMINI_API_KEY}|" iosApp/Configuration/Config.xcconfig
+
+      - name: Install CocoaPods dependencies
+        working-directory: iosApp
+        run: pod install --repo-update
+
+      - name: Build iOS app (Simulator, unsigned)
+        working-directory: iosApp
+        run: |
+          xcodebuild build \
+            -workspace iosApp.xcworkspace \
+            -scheme iosApp \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO
