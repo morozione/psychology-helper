@@ -6,6 +6,12 @@ xcuserdata
 !src/**/build/
 local.properties
 composeApp/google-services.json
+# Release signing key must never be committed — CI decodes it from a secret (see distribute.yml).
+# composeApp/debug.keystore.jks is intentionally NOT ignored: debug keys aren't sensitive, and
+# committing it keeps one stable debug SHA-1 across every machine/CI runner.
+composeApp/release.keystore.jks
+*.keystore.jks
+!composeApp/debug.keystore.jks
 .idea
 .DS_Store
 captures

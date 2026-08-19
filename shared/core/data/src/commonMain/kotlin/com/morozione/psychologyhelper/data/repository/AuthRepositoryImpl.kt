@@ -4,6 +4,7 @@ import com.morozione.psychologyhelper.domain.entity.User
 import com.morozione.psychologyhelper.domain.repository.AuthRepository
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.auth.FirebaseUser
+import dev.gitlive.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -16,6 +17,12 @@ class AuthRepositoryImpl(private val auth: FirebaseAuth) : AuthRepository {
     override suspend fun login(email: String, password: String): Result<User> = runCatching {
         val result = auth.signInWithEmailAndPassword(email, password)
         result.user?.toDomain() ?: error("Login failed: user is null")
+    }
+
+    override suspend fun loginWithGoogle(idToken: String): Result<User> = runCatching {
+        val credential = GoogleAuthProvider.credential(idToken, null)
+        val result = auth.signInWithCredential(credential)
+        result.user?.toDomain() ?: error("Google sign-in failed: user is null")
     }
 
     override suspend fun register(

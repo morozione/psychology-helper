@@ -12,6 +12,9 @@ two lines:
 Add a new entry at the top before opening a PR that should ship a new build — see the `release-version`
 skill.
 
+3 0.3.0
+Signed release builds (fixes App Distribution install failures) and added Sign in with Google.
+
 2 0.2.0
 New app icon, fixed the glued-together app name, and CI now auto-adds a default Firebase App Distribution tester.
 

@@ -2,6 +2,7 @@ package com.morozione.psychologyhelper.data.di
 
 import com.morozione.psychologyhelper.domain.usecase.auth.GetCurrentUserUseCase
 import com.morozione.psychologyhelper.domain.usecase.auth.LoginUseCase
+import com.morozione.psychologyhelper.domain.usecase.auth.LoginWithGoogleUseCase
 import com.morozione.psychologyhelper.domain.usecase.auth.LogoutUseCase
 import com.morozione.psychologyhelper.domain.usecase.auth.RegisterUseCase
 import com.morozione.psychologyhelper.domain.usecase.journal.AddJournalEntryUseCase
@@ -17,6 +18,7 @@ import org.koin.dsl.module
 
 val domainModule = module {
     factory { LoginUseCase(get()) }
+    factory { LoginWithGoogleUseCase(get()) }
     factory { RegisterUseCase(get()) }
     factory { LogoutUseCase(get()) }
     factory { GetCurrentUserUseCase(get()) }

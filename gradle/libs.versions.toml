@@ -24,6 +24,8 @@ googleServices = "4.5.0"
 ktor = "3.5.2"
 coil = "3.5.0"
 splashscreen = "1.2.0"
+androidxCredentials = "1.5.0"
+googleid = "1.2.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -74,6 +76,10 @@ ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "k
 # Coil
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
+# Google Sign-In (Android only, via Credential Manager)
+androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "androidxCredentials" }
+androidx-credentials-playServicesAuth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "androidxCredentials" }
+googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
