@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -15,9 +16,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -36,6 +39,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -43,6 +47,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.morozione.psychologyhelper.ui.component.PsychologyButton
 import com.morozione.psychologyhelper.ui.component.PsychologyTextField
 import com.morozione.psychologyhelper.ui.theme.Dimens
+import com.morozione.psychologyhelper.ui.util.rememberGoogleSignInLauncher
 
 class LoginScreen : Screen {
 
@@ -53,6 +58,9 @@ class LoginScreen : Screen {
         val state by screenModel.state.collectAsState()
         var passwordVisible by remember { mutableStateOf(false) }
         val snackbarHostState = remember { SnackbarHostState() }
+        val launchGoogleSignIn = rememberGoogleSignInLauncher { idToken, error ->
+            screenModel.onIntent(LoginIntent.GoogleSignInResult(idToken, error))
+        }
 
         LaunchedEffect(Unit) {
             screenModel.effects.collect { effect ->
@@ -127,6 +135,31 @@ class LoginScreen : Screen {
                         onClick = { screenModel.onIntent(LoginIntent.Submit) },
                         isLoading = state.isLoading
                     )
+                    Spacer(Modifier.height(Dimens.spaceLg))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        HorizontalDivider(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "  or  ",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                        )
+                        HorizontalDivider(modifier = Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(Dimens.spaceLg))
+
+                    OutlinedButton(
+                        onClick = launchGoogleSignIn,
+                        enabled = !state.isLoading,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                    ) {
+                        Text(text = "Continue with Google")
+                    }
                     Spacer(Modifier.height(Dimens.spaceMd))
 
                     TextButton(

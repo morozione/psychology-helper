@@ -103,9 +103,35 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    signingConfigs {
+        // Debug key is never sensitive (any developer's debug cert is untrusted for production) —
+        // committed and hardcoded so every machine/CI runner shares one stable SHA-1/SHA-256, which
+        // is required for Google Sign-In and Firebase App Check to work in debug builds.
+        getByName("debug") {
+            storeFile = rootProject.file("composeApp/debug.keystore.jks")
+            storePassword = "BaLP3yK2lfCx7JzedHdXagwM"
+            keyAlias = "psychology-helper-debug"
+            keyPassword = "BaLP3yK2lfCx7JzedHdXagwM"
+        }
+        // Release key must never be committed. Local/CI builds only sign release when all four
+        // RELEASE_KEYSTORE_* env vars are set (see distribute.yml); otherwise the release build type
+        // is left unsigned, same as before.
+        create("release") {
+            val storePath = System.getenv("RELEASE_KEYSTORE_PATH")
+            if (storePath != null) {
+                storeFile = file(storePath)
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            if (System.getenv("RELEASE_KEYSTORE_PATH") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     buildFeatures {

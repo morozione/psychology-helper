@@ -21,7 +21,8 @@ bundled JBR (e.g. `C:\Program Files\Android\Android Studio\jbr` on Windows).
 # Full debug APK
 ./gradlew :composeApp:assembleDebug
 
-# Release APK (unsigned — no release signingConfig is set up yet)
+# Release APK — signed only if RELEASE_KEYSTORE_PATH/PASSWORD/RELEASE_KEY_ALIAS/RELEASE_KEY_PASSWORD
+# env vars are set (see distribute.yml); otherwise falls back to unsigned, same as before
 ./gradlew :composeApp:assembleRelease
 
 # See errors across all modules instead of stopping at the first failure
@@ -40,6 +41,26 @@ that's enough to compile but not to exercise real Firebase calls.
 **Gemini chat** needs a `GEMINI_API_KEY` Gradle property (`-PGEMINI_API_KEY=...` or in
 `gradle.properties`, not committed) — it's wired into `BuildConfig` on Android only.
 `shared/core/data/.../GeminiApiKey.ios.kt` currently returns `""`; iOS chat is stubbed, not implemented.
+
+**Signing** (`composeApp/build.gradle.kts`): the `debug` build type is signed with a dedicated, committed
+`composeApp/debug.keystore.jks` (debug keys aren't sensitive — this just keeps one stable SHA-1/SHA-256
+across every machine/CI runner instead of each dev's own auto-generated `~/.android/debug.keystore`). The
+`release` build type is only signed when `RELEASE_KEYSTORE_PATH`/`RELEASE_KEYSTORE_PASSWORD`/
+`RELEASE_KEY_ALIAS`/`RELEASE_KEY_PASSWORD` env vars are all set (CI decodes the keystore from the
+`RELEASE_KEYSTORE_BASE64` secret in `distribute.yml`); without them it silently falls back to an unsigned
+APK. An unsigned release APK is what previously made Firebase App Distribution installs fail while
+Android Studio (which builds/installs the debug variant) worked fine. Both keystores' SHA-1/SHA-256 need
+registering in Firebase console → Project Settings → Your apps → Add fingerprint for Google Sign-In and
+Play Integrity to work.
+
+**Google Sign-In** (Android only — iOS is stubbed the same way Gemini chat is, see
+`shared/core/ui/.../GoogleSignInLauncher.ios.kt`): uses Credential Manager
+(`androidx.credentials`/`googleid`), not the older `GoogleSignInClient`. `GOOGLE_WEB_CLIENT_ID` in
+`shared/core/domain/.../util/GoogleAuthConfig.kt` is hardcoded — it's Firebase's auto-generated OAuth
+"Web client ID", which is not a secret (it ships inside every APK's resources as
+`R.string.default_web_client_id` regardless). If Google Sign-In is disabled/re-enabled in the Firebase
+console, re-download `composeApp/google-services.json` and update that constant from its new
+`oauth_client` entry (`client_type: 3`).
 
 ## Module architecture
 
