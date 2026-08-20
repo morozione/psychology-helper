@@ -32,8 +32,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import com.morozione.psychologyhelper.domain.entity.User
+import com.morozione.psychologyhelper.domain.util.compressImage
 import com.morozione.psychologyhelper.ui.component.PsychologyButton
 import com.morozione.psychologyhelper.ui.component.PsychologyCard
 import com.morozione.psychologyhelper.ui.component.SectionTitle
@@ -45,6 +48,7 @@ fun Screen.ProfileScreenContent(user: User?) {
     val screenModel = koinScreenModel<ProfileScreenModel>()
     val state by screenModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val navigator = LocalNavigator.currentOrThrow
 
     LaunchedEffect(user) {
         screenModel.onIntent(ProfileIntent.Initialize(user))
@@ -59,7 +63,12 @@ fun Screen.ProfileScreenContent(user: User?) {
     }
 
     val pickImage = rememberImagePickerLauncher { bytes ->
-        screenModel.onIntent(ProfileIntent.UploadPhoto(bytes))
+        navigator.push(
+            PhotoPreviewScreen(
+                imageBytes = compressImage(bytes),
+                onUsePhoto = { confirmedBytes -> screenModel.onIntent(ProfileIntent.UploadPhoto(confirmedBytes)) }
+            )
+        )
     }
 
     // App.kt observes auth state changes and navigates to LoginScreen after logout automatically.
