@@ -2,6 +2,7 @@ package com.morozione.psychologyhelper.feature.profile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,10 +23,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import cafe.adriel.voyager.core.screen.Screen
@@ -34,8 +45,13 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.morozione.psychologyhelper.ui.component.PsychologyButton
 import com.morozione.psychologyhelper.ui.component.PsychologyOutlinedButton
 import com.morozione.psychologyhelper.ui.theme.Dimens
+import com.morozione.psychologyhelper.ui.util.toJpegByteArray
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.decodeToImageBitmap
+
+private const val MIN_SCALE = 1f
+private const val MAX_SCALE = 5f
 
 /**
  * [onUsePhoto] is passed in rather than resolved here via koinScreenModel<ProfileScreenModel>():
@@ -51,7 +67,12 @@ class PhotoPreviewScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
+        val scope = rememberCoroutineScope()
         val imageBitmap = remember(imageBytes) { imageBytes.decodeToImageBitmap() }
+        val graphicsLayer = rememberGraphicsLayer()
+
+        var scale by remember { mutableStateOf(1f) }
+        var offset by remember { mutableStateOf(Offset.Zero) }
 
         Scaffold(
             topBar = {
@@ -78,17 +99,35 @@ class PhotoPreviewScreen(
                         .size(Dimens.avatarLg * 2)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                        .pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                val newScale = (scale * zoom).coerceIn(MIN_SCALE, MAX_SCALE)
+                                scale = newScale
+                                offset = clampOffset(offset + pan, newScale, size.width.toFloat())
+                            }
+                        }
+                        .drawWithContent {
+                            graphicsLayer.record { this@drawWithContent.drawContent() }
+                            drawLayer(graphicsLayer)
+                        }
                 ) {
                     Image(
                         bitmap = imageBitmap,
                         contentDescription = "Selected photo",
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                                translationX = offset.x
+                                translationY = offset.y
+                            }
                     )
                 }
                 Spacer(Modifier.height(Dimens.spaceLg))
                 Text(
-                    text = "This will be your new profile photo",
+                    text = "Pinch to zoom, drag to reposition",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                     textAlign = TextAlign.Center
@@ -97,8 +136,11 @@ class PhotoPreviewScreen(
                 PsychologyButton(
                     text = "Use Photo",
                     onClick = {
-                        onUsePhoto(imageBytes)
-                        navigator.pop()
+                        scope.launch {
+                            val cropped = graphicsLayer.toImageBitmap()
+                            onUsePhoto(cropped.toJpegByteArray())
+                            navigator.pop()
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -111,4 +153,13 @@ class PhotoPreviewScreen(
             }
         }
     }
+}
+
+/** Keeps the image from panning far enough to reveal empty space inside the crop frame. */
+private fun clampOffset(offset: Offset, scale: Float, frameSizePx: Float): Offset {
+    val maxOffset = frameSizePx * (scale - 1f) / 2f
+    return Offset(
+        x = offset.x.coerceIn(-maxOffset, maxOffset),
+        y = offset.y.coerceIn(-maxOffset, maxOffset)
+    )
 }

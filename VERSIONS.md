@@ -12,6 +12,9 @@ two lines:
 Add a new entry at the top before opening a PR that should ship a new build — see the `release-version`
 skill.
 
+5 0.5.0
+Pinch-to-zoom cropping when choosing a profile photo, plus tap-to-view with pinch-zoom on the profile photo itself.
+
 4 0.4.0
 Switched to a supported Gemini model with retry on temporary overload, plus iOS build support in CI.
 
