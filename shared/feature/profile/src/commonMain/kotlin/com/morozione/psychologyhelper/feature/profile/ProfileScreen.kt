@@ -1,6 +1,7 @@
 package com.morozione.psychologyhelper.feature.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -96,6 +97,13 @@ fun Screen.ProfileScreenContent(user: User?) {
                     .size(Dimens.avatarLg)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                    .let { base ->
+                        if (state.photoUrl != null) {
+                            base.clickable { navigator.push(PhotoViewerScreen(state.photoUrl!!)) }
+                        } else {
+                            base
+                        }
+                    }
             ) {
                 if (state.photoUrl != null) {
                     AsyncImage(
