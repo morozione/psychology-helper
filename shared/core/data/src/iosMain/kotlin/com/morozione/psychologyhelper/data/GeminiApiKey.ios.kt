@@ -1,3 +1,6 @@
 package com.morozione.psychologyhelper.data
 
-actual fun getGeminiApiKey(): String = ""
+import platform.Foundation.NSBundle
+
+actual fun getGeminiApiKey(): String =
+    NSBundle.mainBundle.objectForInfoDictionaryKey("GeminiApiKey") as? String ?: ""

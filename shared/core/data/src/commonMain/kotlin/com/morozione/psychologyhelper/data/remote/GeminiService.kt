@@ -8,6 +8,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -32,7 +33,10 @@ data class GeminiCandidate(val content: GeminiContent)
 data class GeminiError(val message: String)
 
 private const val GEMINI_URL =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent"
+
+private const val MAX_RETRIES = 2
+private val TRANSIENT_MARKERS = listOf("overloaded", "high demand", "unavailable", "resource_exhausted")
 
 class GeminiService(private val httpClient: HttpClient, private val apiKey: String) {
 
@@ -59,13 +63,27 @@ class GeminiService(private val httpClient: HttpClient, private val apiKey: Stri
     }
 
     private suspend fun callGemini(contents: List<GeminiContent>): String {
-        val response: GeminiResponse = httpClient.post(GEMINI_URL) {
-            parameter("key", apiKey)
-            contentType(ContentType.Application.Json)
-            setBody(GeminiRequest(contents))
-        }.body()
-        response.error?.let { error(it.message) }
-        return response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
-            ?: error("Empty response from Gemini")
+        var lastError: Throwable? = null
+        repeat(MAX_RETRIES + 1) { attempt ->
+            val response: GeminiResponse = httpClient.post(GEMINI_URL) {
+                parameter("key", apiKey)
+                contentType(ContentType.Application.Json)
+                setBody(GeminiRequest(contents))
+            }.body()
+
+            val errorMessage = response.error?.message
+            if (errorMessage == null) {
+                return response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+                    ?: error("Empty response from Gemini")
+            }
+
+            val isTransient = TRANSIENT_MARKERS.any { errorMessage.contains(it, ignoreCase = true) }
+            lastError = RuntimeException(errorMessage)
+            if (!isTransient || attempt == MAX_RETRIES) {
+                throw lastError as Throwable
+            }
+            delay(500L * (attempt + 1))
+        }
+        throw lastError ?: error("Empty response from Gemini")
     }
 }

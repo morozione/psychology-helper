@@ -12,6 +12,9 @@ two lines:
 Add a new entry at the top before opening a PR that should ship a new build — see the `release-version`
 skill.
 
+4 0.4.0
+Switched to a supported Gemini model with retry on temporary overload, plus iOS build support in CI.
+
 3 0.3.0
 Signed release builds (fixes App Distribution install failures) and added Sign in with Google.
 
